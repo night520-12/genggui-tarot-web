@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>耿鬼的桀桀塔罗店 · 电脑预览</title>
+<style>
+  :root{
+    --bg:#0b0620;
+    --panel:#150c2e;
+    --line:rgba(243,220,164,.18);
+    --gold:#f3dca4;
+    --sub:#9d8fc0;
+    --violet:#a97fe8;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #2a1552 0%, transparent 62%),
+      radial-gradient(900px 600px at 90% 110%, #1d0f3e 0%, transparent 60%),
+      var(--bg);
+    color:#e9e2f7;
+    font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  /* ---------- 顶部工具条 ---------- */
+  header{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 22px;
+    border-bottom:1px solid var(--line);
+    background:rgba(21,12,46,.55);
+  }
+  .logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:700;
+    letter-spacing:.06em;
+    color:var(--gold);
+    font-size:15px;
+    white-space:nowrap;
+  }
+  .logo i{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--violet);
+    box-shadow:0 0 12px 3px rgba(169,127,232,.75);
+    display:block;
+  }
+  .sep{width:1px;height:22px;background:var(--line)}
+  .group{display:flex;align-items:center;gap:8px}
+  .group span{font-size:12.5px;color:var(--sub);margin-right:2px}
+
+  button{
+    font:inherit;
+    font-size:13px;
+    color:#d9cff0;
+    background:rgba(169,127,232,.10);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:7px 13px;
+    cursor:pointer;
+    transition:background .16s,border-color .16s,color .16s,transform .16s;
+    white-space:nowrap;
+  }
+  button:hover{background:rgba(169,127,232,.20);border-color:rgba(243,220,164,.4);color:#fff}
+  button:active{transform:translateY(1px)}
+  button.on{
+    background:linear-gradient(180deg,rgba(243,220,164,.95),rgba(214,178,110,.95));
+    border-color:rgba(243,220,164,.9);
+    color:#20122f;
+    font-weight:700;
+  }
+  .spacer{flex:1}
+
+  /* ---------- 舞台 ---------- */
+  .stage{
+    flex:1 1 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    min-height:0;
+    padding:18px;
+  }
+  .frame{
+    position:relative;
+    transform-origin:center center;
+    transition:transform .18s ease;
+  }
+  .phone{
+    position:relative;
+    padding:12px;
+    border-radius:52px;
+    background:linear-gradient(160deg,#3a2a5e,#171029 45%,#241738);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.07),
+      0 30px 80px -20px rgba(0,0,0,.9),
+      0 0 90px rgba(169,127,232,.22),
+      inset 0 1px 0 rgba(255,255,255,.10);
+  }
+  .screen{
+    position:relative;
+    border-radius:42px;
+    overflow:hidden;
+    background:#0b0620;
+    box-shadow:0 0 0 1px rgba(0,0,0,.8);
+  }
+  .screen iframe{
+    display:block;
+    border:0;
+    width:100%;
+    height:100%;
+    background:#0b0620;
+  }
+  /* 侧键 */
+  .btn-side{position:absolute;width:3px;border-radius:3px;background:linear-gradient(180deg,#4a3a70,#2a1c47);pointer-events:none}
+  .btn-side.r{right:-3px;top:190px;height:64px}
+  .btn-side.l1{left:-3px;top:150px;height:34px}
+  .btn-side.l2{left:-3px;top:196px;height:34px}
+
+  footer{
+    flex:0 0 auto;
+    text-align:center;
+    font-size:12px;
+    color:var(--sub);
+    padding:0 20px 14px;
+    line-height:1.7;
+  }
+  footer b{color:var(--gold);font-weight:600}
+  kbd{
+    background:rgba(255,255,255,.08);
+    border:1px solid var(--line);
+    border-bottom-width:2px;
+    border-radius:5px;
+    padding:1px 6px;
+    font-size:11px;
+    font-family:ui-monospace,Consolas,monospace;
+    color:#e9e2f7;
+  }
+  @media (max-width:900px){
+    header{gap:10px;padding:12px 14px;flex-wrap:wrap}
+    .group span{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><i></i>耿鬼的桀桀塔罗店</div>
+  <div class="sep"></div>
+  <div class="group">
+    <span>机型</span>
+    <button class="size on" data-w="390" data-h="844">13 / 通用</button>
+    <button class="size" data-w="430" data-h="932">Pro Max</button>
+    <button class="size" data-w="360" data-h="640">小屏</button>
+  </div>
+  <div class="spacer"></div>
+  <button id="reload">重新载入</button>
+  <button id="open">新窗口打开</button>
+</header>
+
+<div class="stage">
+  <div class="frame" id="frame">
+    <div class="phone">
+      <div class="btn-side r"></div>
+      <div class="btn-side l1"></div>
+      <div class="btn-side l2"></div>
+      <div class="screen" id="screen">
+        <iframe id="app" src="index.html?preview=1" allow="clipboard-write"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  这就是 App 里 WebView 显示的真实画面（同一套文件、同一套动画）。<b>付费入口已隐藏</b>，解读走本地规则引擎。<br>
+  想清空进度：在本页按 <kbd>F12</kbd> → Console 输入 <kbd>localStorage.clear()</kbd> 后回车，再点「重新载入」。
+</footer>
+
+<script>
+  const frame = document.getElementById('frame');
+  const screen = document.getElementById('screen');
+  const iframe = document.getElementById('app');
+  let W = 390, H = 844;
+
+  function applySize() {
+    screen.style.width = W + 'px';
+    screen.style.height = H + 'px';
+    iframe.style.width = W + 'px';
+    iframe.style.height = H + 'px';
+    fit();
+  }
+
+  function fit() {
+    const stage = document.querySelector('.stage');
+    const availH = stage.clientHeight - 36;
+    const availW = stage.clientWidth - 36;
+    const scale = Math.min(1, availH / (H + 24), availW / (W + 24));
+    frame.style.transform = 'scale(' + scale + ')';
+  }
+
+  document.querySelectorAll('.size').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.size').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      W = +b.dataset.w;
+      H = +b.dataset.h;
+      applySize();
+    });
+  });
+
+  document.getElementById('reload').addEventListener('click', function () {
+    iframe.src = 'index.html?preview=1&t=' + Date.now();
+  });
+
+  document.getElementById('open').addEventListener('click', function () {
+    window.open('index.html', '_blank');
+  });
+
+  window.addEventListener('resize', fit);
+  applySize();
+</script>
+</body>
+</html>

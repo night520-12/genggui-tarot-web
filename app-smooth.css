@@ -1,0 +1,239 @@
+/* ============================================================
+   动效流畅度优化层（App 内嵌版专用，最后加载、优先级最高）
+   原则：观感不变，只把「每帧都要重绘/重新栅格化」的属性换掉。
+     ① backdrop-filter  → 纯色（翻牌时每帧回读背景，最贵）
+     ② filter 呼吸动画  → opacity 呼吸（合成层，零重绘）
+     ③ background-position 扫光 → transform 扫光（合成层）
+     ④ box-shadow 光晕动画 → 静态阴影 + opacity
+     ⑤ 小尺寸牌（扇形/飞牌/洗牌）里看不见的装饰动画与滤镜全关
+   ============================================================ */
+
+/* ---------- ① 卡面「正位/逆位」小胶囊：去掉毛玻璃 ---------- */
+.card-orient{
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+}
+.card-orient.up{background:rgba(18,58,44,.84)}
+.card-orient.rev{background:rgba(68,24,28,.84)}
+
+/* ---------- ② 待翻牌的呼吸光：不再用 filter ---------- */
+.card-slot.locked .card{animation:none !important}
+
+/* 内侧金色呼吸（inset 阴影，元素内不会被 overflow 裁掉） */
+.card-slot.locked .card-back::before{
+  content:"";position:absolute;inset:0;border-radius:13px;
+  pointer-events:none;z-index:3;
+  box-shadow:inset 0 0 18px rgba(243,220,164,.45),inset 0 0 3px rgba(243,220,164,.55);
+  opacity:.12;
+  animation:awaitInner 2.8s ease-in-out infinite;
+}
+@keyframes awaitInner{
+  0%,100%{opacity:.12}
+  50%{opacity:.8}
+}
+/* 外圈金环呼吸（放大 + 透明度，本来就是合成层动画，只是加了静态辉光） */
+.card-slot.locked .card-back::after{
+  box-shadow:0 0 10px rgba(217,180,106,.45),inset 0 0 10px rgba(217,180,106,.28);
+}
+
+/* ---------- ③ 翻牌扫光：background-position → transform ---------- */
+.card::after{
+  content:"";position:absolute;inset:-2px;border-radius:14px;
+  pointer-events:none;opacity:0;
+  background:none;
+  box-shadow:0 0 0 1.5px rgba(243,220,164,.85),0 0 24px 5px rgba(243,220,164,.5);
+  animation:none;
+}
+.card.flipped::after{animation:glowFlash 1.15s ease-out .18s}
+@keyframes glowFlash{
+  0%{opacity:0}
+  32%{opacity:1}
+  100%{opacity:0}
+}
+
+/* 扫光挪进 card-front（自带 overflow:hidden，天然裁切），只动 transform/opacity */
+.card-front::after{
+  content:"";position:absolute;inset:0;z-index:6;border-radius:13px;
+  pointer-events:none;opacity:0;transform:translateX(-115%);
+  background:linear-gradient(115deg,transparent 38%,rgba(255,246,221,.5) 50%,transparent 62%);
+}
+.card.flipped .card-front::after{
+  animation:sheenSweep .95s cubic-bezier(.3,.62,.4,1) .16s;
+}
+@keyframes sheenSweep{
+  0%{opacity:0;transform:translateX(-115%)}
+  26%{opacity:1}
+  100%{opacity:0;transform:translateX(115%)}
+}
+/* 原来的 box-shadow 关键帧动画停用（扫光 + 上面那圈 glowFlash 已经足够） */
+.card.flipped .card-front{animation:none !important}
+
+/* ---------- ④ 空位虚线框：只动透明度 ---------- */
+.slot-ghost{animation:ghostFade 2.4s ease-in-out infinite !important}
+@keyframes ghostFade{
+  0%,100%{opacity:.58}
+  50%{opacity:.96}
+}
+
+/* ---------- ⑤ 翻牌提示条：静态化（原来是无限 box-shadow 动画） ---------- */
+.flip-hint{animation:none !important}
+
+/* ---------- ⑥ 扇形牌 21 张：关掉肉眼看不清的装饰动画与滤镜 ---------- */
+.fan-card .gengar-back .gb-ring,
+.fan-card .gengar-back .gb-text{
+  animation:none !important;
+}
+/* 58×92 的小牌上那 12 颗 1.3px 的星点根本看不清，却是 21×12=252 个节点 */
+.fan-card .gengar-back .gb-stars{display:none !important}
+.fan-card .gengar-back .gb-img{filter:none !important}
+.fan-card .gengar-back{
+  box-shadow:inset 0 0 14px rgba(169,127,232,.42),inset 0 0 3px rgba(243,220,164,.35);
+}
+/* 触屏没有 hover，避免 :active 时给整张牌叠一层 filter（抽牌那一瞬间最容易掉帧） */
+@media (hover:none),(pointer:coarse){
+  .fan-card:hover,.fan-card:active{filter:none !important}
+  .fan-card:active .card-face{
+    box-shadow:0 0 0 1.5px rgba(243,220,164,.85),0 8px 22px rgba(0,0,0,.55) !important;
+  }
+}
+
+/* ---------- ⑦ 飞牌：飞行中不重复栅格化整套牌背 ---------- */
+.card.fly-card .gengar-back .gb-img{filter:none !important}
+.card.fly-card .gengar-back .gb-ring,
+.card.fly-card .gengar-back .gb-text{animation:none !important}
+.card.fly-card .gengar-back .gb-stars{display:none !important}
+.card.fly-card .gengar-back{
+  box-shadow:inset 0 0 16px rgba(169,127,232,.45),inset 0 0 3px rgba(243,220,164,.4);
+}
+.card.fly-card{
+  box-shadow:0 10px 24px rgba(0,0,0,.55);
+  border-radius:13px;
+}
+
+/* ---------- ⑧ 洗牌三套动的动画：14 / 2 / 11 张牌同时飞，装饰必须关 ---------- */
+.riffle .rs .gengar-back .gb-ring,
+.riffle .rs .gengar-back .gb-text,
+.shuf-cut .cut-half .gengar-back .gb-ring,
+.shuf-cascade .cs .gengar-back .gb-ring{
+  animation:none !important;
+}
+.riffle .rs .gengar-back .gb-stars,
+.shuf-cut .cut-half .gengar-back .gb-stars,
+.shuf-cascade .cs .gengar-back .gb-stars{display:none !important}
+.riffle .rs .gengar-back .gb-img,
+.shuf-cut .cut-half .gengar-back .gb-img,
+.shuf-cascade .cs .gengar-back .gb-img{filter:none !important}
+.riffle .rs .gengar-back,
+.shuf-cut .cut-half .gengar-back,
+.shuf-cascade .cs .gengar-back{
+  box-shadow:inset 0 0 18px rgba(169,127,232,.45),inset 0 0 3px rgba(243,220,164,.4);
+}
+
+/* ---------- ⑨ 翻牌层稳定性：让被转的牌一直待在自己的合成层里 ---------- */
+.card{will-change:transform}
+
+/* ============================================================
+   ⑩ 最关键的一处：全站常驻的 shine 只在「改背景位置」
+   background-position 是纯重绘属性，而且是 infinite 的 —— 也就是说
+   你翻牌的那 0.9 秒里，标题和金色按钮一直在抢主线程重新栅格化。
+   （标题还叠了 background-clip:text，等于每帧重画一遍文字）
+   改法：文字标题改为静态渐变；按钮换成一层 transform 位移的高光。
+   ============================================================ */
+.brand h1{
+  animation:none !important;
+  background-position:50% 0;
+}
+
+/* 金色主按钮：静态渐变 + 一层合成层高光扫过 */
+.btn-primary,
+.name-btn.primary,
+.coin-btn{
+  animation:none !important;
+  position:relative;
+  overflow:hidden;
+}
+.btn-primary::after,
+.name-btn.primary::after,
+.coin-btn::after{
+  content:"";position:absolute;top:-60%;bottom:-60%;left:0;width:52%;
+  border-radius:inherit;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5) 50%,transparent);
+  transform:translateX(-220%) skewX(-14deg);
+  animation:btnShine 5.5s linear infinite;
+  will-change:transform;
+}
+@keyframes btnShine{
+  0%{transform:translateX(-220%) skewX(-14deg)}
+  62%,100%{transform:translateX(320%) skewX(-14deg)}
+}
+.btn-primary:disabled::after{display:none}
+
+/* 投币按钮的入场动画要留着，只去掉 shine */
+.coin-btn{animation:btnIn .55s cubic-bezier(.34,1.5,.64,1) 1.6s both !important}
+
+/* ============================================================
+   ⑪ 牌背上的 12 颗小星点：原来是 12 个独立 opacity 动画
+   （每张牌 12 层合成层，10 张牌就是 120 层）
+   改成整个星点容器一起呼吸 —— 视觉上完全一样，层数降到 1。
+   ============================================================ */
+.gengar-back .gb-stars i{animation:none !important}
+.gengar-back .gb-stars{animation:starsTwinkle 3s ease-in-out infinite}
+@keyframes starsTwinkle{
+  0%,100%{opacity:.72}
+  50%{opacity:1}
+}
+
+/* ============================================================
+   ⑫ 底部导航栏的 18px 毛玻璃：它固定在屏幕上永远可见，
+   背后又是一整屏一直在闪的星空层 —— 等于 60fps 不停地做全宽高斯模糊。
+   换成同色系的实心渐变，肉眼几乎看不出差别，但这块开销直接归零。
+   ============================================================ */
+.tabbar{
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+  background:linear-gradient(180deg,rgba(15,8,38,.97),rgba(11,6,32,.995)) !important;
+}
+
+/* ============================================================
+   ⑬ 翻牌手感
+   原来 .9s 的弹性曲线会让卡片转过 180° 再弹回来 —— 越过 180° 的那一瞬间
+   正面图案会「翻过头」露出一点点镜像，看着就是抖了一下。改成不越界的收尾曲线。
+   注意：这里不能加 !important —— 恢复草稿时脚本会用
+   el.style.transition='none' 内联关掉过渡，!important 会把它压掉，
+   结果一恢复历史记录所有牌就一起翻。
+   ============================================================ */
+.card{
+  transition:transform .72s cubic-bezier(.22,.68,.24,1);
+  -webkit-backface-visibility:hidden;
+}
+
+/* 按下时的 brightness 滤镜会在翻牌起手那一帧强制整张牌重绘，
+   而且 filter 会让 preserve-3d 失效（3D 上下文被压平）。
+   换成已经栅格化好的金色光圈改透明度，代价几乎为零。 */
+.card:active{filter:none !important}
+.card-slot.locked .card:active::after{opacity:.7}
+
+
+
+/* ============================================================
+   ⑭ 硬币图标
+   🪙 是 Unicode 13.0（2020）新增字符，Windows 10 早期版本和
+   Android 10 以下的 emoji 字体里没有这个字形，会渲染成「豆腐块」。
+   而且各平台 emoji 风格差异很大，跟这里的金色按钮并不搭。
+   统一换成内嵌 SVG 金币（金色渐变 + 星纹），三端一致。
+   ============================================================ */
+.coin-btn-ico,
+.coin-fly{
+  color:transparent !important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.35' cy='.3' r='.85'%3E%3Cstop offset='0' stop-color='%23fff6d6'/%3E%3Cstop offset='.45' stop-color='%23f0cf85'/%3E%3Cstop offset='1' stop-color='%23b8862f'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='20' cy='20' r='18' fill='url(%23g)' stroke='%238a6524' stroke-width='2'/%3E%3Ccircle cx='20' cy='20' r='13' fill='none' stroke='%23a97b2e' stroke-width='1.4' opacity='.7'/%3E%3Cpath d='M20 11 L22.17 17.01 L28.56 17.22 L23.52 21.14 L25.29 27.28 L20 23.7 L14.71 27.28 L16.48 21.14 L11.44 17.22 L17.83 17.01 Z' fill='%23a97b2e' opacity='.55'/%3E%3Cellipse cx='14' cy='12' rx='5' ry='3' fill='%23ffffff' opacity='.35' transform='rotate(-25 14 12)'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+}
+.coin-btn-ico{
+  width:20px;height:20px;
+  vertical-align:-3px;
+}
+.coin-fly{
+  width:34px;height:34px;
+}

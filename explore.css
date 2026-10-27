@@ -1,0 +1,122 @@
+/* ============================================================
+   探索页 · 小游戏入口卡片 + 全屏游戏遮罩
+   独立文件，带自己的 ?v= 版本戳，避免改动主样式（style.css）。
+   仅作用于 #page-quiz 内的游戏卡 与 #heibaoOverlay 遮罩。
+   ============================================================ */
+
+/* ---------- 小游戏入口卡片 ---------- */
+.explore-game-section { margin: 2px 0 16px; }
+
+.explore-game-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #3a2f4a;
+  margin: 2px 2px 10px;
+}
+.explore-game-head .eg-ico { font-size: 18px; }
+
+.explore-game-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2a1840 0%, #3d2360 55%, #5a2f86 100%);
+  color: #f3eaff;
+  box-shadow: 0 6px 20px rgba(60, 20, 100, .18);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.explore-game-card:active { transform: scale(.99); }
+
+.eg-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  flex: 0 0 auto;
+  background: #0a0612;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .15) inset;
+}
+.eg-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.eg-info { flex: 1 1 auto; min-width: 0; }
+.eg-title { font-size: 17px; font-weight: 800; letter-spacing: 1px; }
+.eg-desc {
+  font-size: 12.5px;
+  opacity: .82;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.eg-play {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  border: none;
+  background: #ffe9a8;
+  color: #3a2300;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(255, 210, 120, .4);
+  cursor: pointer;
+}
+.eg-play:active { transform: scale(.97); }
+
+/* ---------- 全屏游戏遮罩 ---------- */
+.heibao-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  background: #0a0612;
+}
+.heibao-overlay[hidden] { display: none; }
+
+.hb-overlay-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  background: rgba(20, 10, 35, .92);
+  color: #f3eaff;
+}
+.hb-overlay-title { font-weight: 800; letter-spacing: 1px; font-size: 15px; }
+
+.hb-overlay-close {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.hb-overlay-close:active { background: rgba(255, 255, 255, .22); }
+
+.heibao-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  border: 0;
+  background: #0a0612;
+  display: block;
+}
+
+/* 遮罩打开时锁定父页面滚动 */
+body.hb-lock { overflow: hidden; }

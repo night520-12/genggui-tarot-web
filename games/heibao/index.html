@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- 禁止缩放 / 竖屏适配 / 安全区 -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- 站点图标：黑洞小球（避免浏览器默认请求 /favicon.ico 产生 404） -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>合成黑洞</title>
+    <style>
+      /* 仅作用于本 iframe 内部，不污染父页面 */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0a0612;
+        /* 禁止 iOS 双击/长按缩放菜单 */
+        touch-action: none;
+        -webkit-touch-callout: none;
+        -webkit-text-size-adjust: 100%;
+        overscroll-behavior: none;
+      }
+      /* 全局样式隔离：所有类名带 hb- 前缀（见 overlay.css） */
+      #heibao-root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        /* 适配 iPhone 安全区 */
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        overflow: hidden;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        background: #0a0612;
+        font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      #hb-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-GnKFCpCk.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B6c_Sn4F.css">
+  </head>
+  <body>
+    <div id="heibao-root">
+      <canvas id="hb-canvas"></canvas>
+    </div>
+  </body>
+</html>

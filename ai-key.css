@@ -1,0 +1,231 @@
+/* ============================================================
+   BYOK · AI 密钥设置弹窗 / 入口样式
+   ============================================================ */
+
+/* ---------- 解牌区：配置密钥的小入口 ---------- */
+.ai-key-link{
+  display:block;width:100%;margin:8px 0 2px;padding:6px 4px;
+  background:none;border:0;
+  font:inherit;font-size:12px;letter-spacing:.4px;
+  color:rgba(217,180,106,.78);
+  text-align:center;cursor:pointer;
+  transition:color .18s ease;
+}
+.ai-key-link:active{color:var(--gold-light)}
+.btn-ai-pro.needkey{
+  border-color:rgba(217,180,106,.24);
+  background:linear-gradient(135deg,rgba(46,28,96,.55),rgba(30,17,71,.55));
+  opacity:.94;
+}
+.btn-ai-pro.needkey .aip-badge{
+  background:rgba(217,180,106,.14);
+  color:var(--gold-light);
+}
+
+/* ---------- 「我的」页卡片 ---------- */
+.aikey-card{
+  display:flex;align-items:center;gap:12px;
+  margin:0 0 16px;padding:14px 16px;
+  background:linear-gradient(135deg,rgba(46,28,96,.72),rgba(30,17,71,.72));
+  border:1px solid rgba(217,180,106,.24);
+  border-radius:16px;
+}
+.aikey-card.on{border-color:rgba(217,180,106,.5)}
+.aikey-card-main{flex:1;min-width:0}
+.aikey-card-main b{
+  display:block;font-size:13.5px;font-weight:600;letter-spacing:.5px;
+  color:var(--gold-light);margin-bottom:3px;
+}
+.aikey-card-main span{
+  display:block;font-size:11.5px;line-height:1.5;color:var(--text-dim);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.aikey-card-btn{
+  flex:0 0 auto;padding:7px 14px;border-radius:999px;
+  border:1px solid rgba(217,180,106,.42);
+  background:rgba(217,180,106,.12);
+  color:var(--gold-light);font:inherit;font-size:12px;letter-spacing:.6px;
+  cursor:pointer;
+}
+.aikey-card-btn:active{background:rgba(217,180,106,.22)}
+
+/* ---------- 弹窗 ---------- */
+.ak-mask{
+  position:fixed;inset:0;z-index:1200;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  background:rgba(6,3,18,.78);
+  animation:akFade .18s ease both;
+}
+@keyframes akFade{from{opacity:0}to{opacity:1}}
+.ak-dialog{
+  width:100%;max-width:430px;max-height:88vh;
+  display:flex;flex-direction:column;
+  background:linear-gradient(180deg,#1c1040 0%,#150b33 62%,#120a2c 100%);
+  border:1px solid rgba(217,180,106,.34);
+  border-radius:20px;
+  box-shadow:0 22px 60px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.03) inset;
+  overflow:hidden;
+  animation:akIn .22s cubic-bezier(.2,.8,.3,1) both;
+}
+@keyframes akIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+.ak-head{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:16px 16px 12px;
+  border-bottom:1px solid rgba(217,180,106,.16);
+}
+.ak-head-txt{flex:1;min-width:0}
+.ak-head-txt b{
+  display:block;font-size:15px;font-weight:600;letter-spacing:1px;
+  color:var(--gold-light);
+}
+.ak-head-txt i{
+  display:block;margin-top:3px;
+  font-size:11.5px;font-style:normal;line-height:1.5;color:var(--text-dim);
+}
+.ak-close{
+  flex:0 0 auto;width:28px;height:28px;border-radius:50%;
+  border:1px solid rgba(217,180,106,.22);background:rgba(255,255,255,.04);
+  color:var(--text-dim);font-size:13px;line-height:1;cursor:pointer;
+}
+
+.ak-body{
+  padding:14px 16px 6px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.ak-note{
+  margin-bottom:14px;padding:10px 12px;
+  font-size:11.5px;line-height:1.65;color:var(--text-dim);
+  background:rgba(123,91,214,.12);
+  border:1px solid rgba(123,91,214,.26);
+  border-radius:12px;
+}
+.ak-field{margin-bottom:13px}
+.ak-field label{
+  display:block;margin-bottom:6px;
+  font-size:11.5px;letter-spacing:.6px;color:rgba(217,180,106,.86);
+}
+.ak-field input{
+  width:100%;padding:11px 12px;
+  background:rgba(8,4,24,.68);
+  border:1px solid rgba(217,180,106,.22);
+  border-radius:12px;
+  color:var(--text);font:inherit;font-size:13px;
+  outline:none;
+  transition:border-color .18s ease;
+}
+.ak-field input::placeholder{color:rgba(169,156,203,.55)}
+.ak-field input:focus{border-color:rgba(217,180,106,.6)}
+
+.ak-presets{display:flex;flex-wrap:wrap;gap:7px}
+.ak-chip{
+  padding:6px 12px;border-radius:999px;
+  border:1px solid rgba(217,180,106,.2);
+  background:rgba(255,255,255,.03);
+  color:var(--text-dim);font:inherit;font-size:12px;
+  cursor:pointer;transition:all .16s ease;
+}
+.ak-chip.on{
+  border-color:rgba(217,180,106,.66);
+  background:rgba(217,180,106,.16);
+  color:var(--gold-light);
+}
+
+.ak-keyrow{position:relative}
+.ak-keyrow input{padding-right:62px}
+.ak-eye{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  padding:6px 10px;border-radius:8px;
+  border:0;background:rgba(217,180,106,.1);
+  color:rgba(217,180,106,.86);font:inherit;font-size:11.5px;cursor:pointer;
+}
+
+.ak-hint{
+  margin:2px 0 12px;font-size:11px;line-height:1.7;color:rgba(169,156,203,.82);
+}
+.ak-hint b{color:rgba(243,220,164,.9);font-weight:600}
+
+.ak-status{
+  margin:0 0 12px;padding:9px 12px;border-radius:10px;
+  font-size:11.5px;line-height:1.6;
+  border:1px solid transparent;
+  word-break:break-word;
+}
+.ak-status.ok{
+  color:#9ef0c8;background:rgba(40,140,96,.16);border-color:rgba(80,200,150,.3);
+}
+.ak-status.err{
+  color:#ffb3bd;background:rgba(170,40,70,.16);border-color:rgba(230,90,120,.34);
+}
+.ak-status.busy{
+  color:var(--gold-light);background:rgba(217,180,106,.1);border-color:rgba(217,180,106,.3);
+}
+
+.ak-acts{
+  display:flex;gap:8px;
+  padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid rgba(217,180,106,.14);
+  background:rgba(10,5,28,.5);
+}
+.ak-btn{
+  flex:1;padding:11px 8px;border-radius:12px;
+  border:1px solid rgba(217,180,106,.26);
+  background:rgba(255,255,255,.04);
+  color:var(--text);font:inherit;font-size:13px;letter-spacing:.5px;
+  cursor:pointer;
+}
+.ak-btn.primary{
+  border-color:rgba(217,180,106,.62);
+  background:linear-gradient(135deg,#c9a45f,#e8cf95 52%,#b8913f);
+  color:#231540;font-weight:600;
+}
+.ak-btn.danger{
+  flex:0 0 68px;color:#e79aab;border-color:rgba(200,80,110,.3);
+}
+.ak-btn:disabled{opacity:.55}
+
+/* 测评结果页：AI 分析来源标注 */
+.qra-by{
+  display:block;margin-top:5px;
+  font-size:11px;font-style:normal;line-height:1.5;
+  color:var(--text-dim);
+}
+
+/* ---------- 设置弹窗：补充说明 ---------- */
+.ak-sub{
+  margin-top:6px;font-size:11px;line-height:1.65;color:var(--text-dim);
+}
+.ak-sub b{color:var(--gold-light);font-weight:600}
+
+/* ---------- 解读结果：看图标注 / 降级提示 ---------- */
+.ai-tag-vision{
+  display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;
+  background:linear-gradient(135deg,#5f9fc9,#7bd0c2);
+  color:#08202b;font-size:10px;font-weight:700;letter-spacing:.04em;
+  vertical-align:middle;white-space:nowrap;
+}
+.ai-tag-vision.off{
+  background:rgba(255,255,255,.08);color:var(--text-dim);
+  border:1px solid rgba(183,156,245,.22);
+}
+.ai-vision-tip{
+  margin-top:10px;padding:9px 11px;border-radius:10px;
+  font-size:11px;line-height:1.7;color:var(--text-dim);
+  background:rgba(255,255,255,.03);
+  border:1px dashed rgba(183,156,245,.22);
+}
+
+/* ---------- 解读结论区：比正文更醒目 ---------- */
+.ai-body .ai-section.verdict{
+  background:linear-gradient(180deg,rgba(217,180,106,.15),rgba(217,180,106,.04));
+  border:1px solid rgba(217,180,106,.45);
+  border-left:3px solid var(--gold);
+  box-shadow:0 6px 22px -14px rgba(217,180,106,.6);
+}
+.ai-body .ai-section.verdict .ai-section-title{
+  font-size:14.5px;color:var(--gold-light);letter-spacing:2px;
+}
+.ai-body .ai-section.verdict .ai-section-body p:first-child{
+  font-size:13.6px;font-weight:600;color:#f7ecd2;
+}

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#faf8f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no,email=no,address=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="桀桀塔罗">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<title>耿鬼的桀桀塔罗店</title>
+<link rel="preload" as="image" href="cards/attack-1.png">
+<link rel="preload" as="image" href="cards/attack-2.png">
+<link rel="preload" as="image" href="cards/attack-3.png">
+<link rel="stylesheet" href="style.css?v=34">
+<link rel="stylesheet" href="explore.css?v=1">
+<link rel="stylesheet" href="app-offline.css?v=1">
+<link rel="stylesheet" href="app-smooth.css?v=1">
+<link rel="stylesheet" href="ai-key.css?v=3">
+<link rel="stylesheet" href="reading-view.css?v=1">
+</head>
+<body>
+
+<!-- ========== 开场页：耿鬼投币 ========== -->
+<div class="intro" id="intro">
+  <div class="intro-stars" id="introStars"></div>
+
+  <!-- 耿鬼 -->
+  <div class="intro-gengar" id="introGengar">
+    <div class="intro-glow"></div>
+    <img src="cards/gengar.png" alt="耿鬼大师" draggable="false">
+    <div class="coin-fly" id="coinFly">🪙</div>
+  </div>
+
+  <!-- 对话气泡 -->
+  <div class="bubble" id="bubble">
+    <p class="bubble-text" id="bubbleText"></p>
+    <span class="bubble-tail"></span>
+  </div>
+
+  <!-- 投币按钮 -->
+  <button class="coin-btn" id="coinBtn">
+    <span class="coin-btn-ico">🪙</span>
+    <span class="coin-btn-txt">投 币 占 卜</span>
+  </button>
+
+  <p class="intro-tip" id="introTip">桀桀桀…</p>
+
+  <!-- 影子球攻击特效 -->
+  <canvas class="shadow-attack" id="shadowAttack" width="240" height="280"></canvas>
+
+  <!-- ✨ 华丽特效层 -->
+  <div class="fx-layer" id="fxLayer">
+    <canvas class="fx-fx" id="fxCanvas"></canvas>
+    <div class="fx-charge" id="fxCharge"></div>
+    <div class="fx-ring" id="fxRing"></div>
+    <div class="fx-ring fx-ring2" id="fxRing2"></div>
+    <div class="fx-lines" id="fxLines"></div>
+    <div class="fx-speed" id="fxSpeed"></div>
+    <div class="fx-burst" id="fxBurst"></div>
+    <div class="fx-flash" id="fxFlash"></div>
+    <div class="fx-vignette" id="fxVignette"></div>
+    <div class="fx-damage" id="fxDamage">-9999</div>
+  </div>
+
+  <!-- 女王大人登场 -->
+  <div class="queen-show" id="queenShow" hidden>
+    <img src="cards/queen.png" alt="女王大人" draggable="false">
+  </div>
+
+  <!-- 姓名输入弹窗 -->
+  <div class="name-modal" id="nameModal" hidden>
+    <div class="name-card">
+      <div class="name-gengar">
+        <img src="cards/gengar.png" alt="耿鬼" draggable="false">
+      </div>
+      <h3 class="name-title">让本大师记下你的名字</h3>
+      <p class="name-sub">桀桀…报上名来</p>
+      <input type="text" id="nameInput" maxlength="12" placeholder="请输入你的名字…" autocomplete="off">
+      <div class="name-actions">
+        <button class="name-btn primary" id="nameConfirm">就 是 我</button>
+        <button class="name-btn ghost" id="nameCancel">不告诉你</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- 顶部 -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">✦</span>
+      <div>
+        <h1>耿鬼的桀桀塔罗店</h1>
+        <p class="brand-sub">桀桀桀 · 抽牌 · 窥探命运</p>
+      </div>
+    </div>
+    <!-- 点数（1 点 = 1 张牌） -->
+    <button class="credit-chip" id="creditChip" title="查看点数 / 购买">
+      <span class="cc-ico">🎟️</span>
+      <span class="cc-num" id="creditNum">0</span>
+      <span class="cc-txt">点</span>
+    </button>
+  </header>
+
+  <!-- 内容区 -->
+  <main class="main">
+
+    <!-- 问候条 -->
+    <div class="greet-bar" id="greetBar"></div>
+
+    <!-- ========== 抽牌页 ========== -->
+    <section class="page active" id="page-draw">
+      <div class="space"></div>
+      <h2 class="space-title">静下心来，想好你的问题</h2>
+      <p class="space-desc" id="drawHint">在心中默念你想知道的事，然后选择牌阵</p>
+
+      <!-- 牌阵选择器 -->
+      <div class="spread-picker" id="spreadPicker">
+        <div class="sp-cats" id="spCats"></div>
+        <div class="sp-scroll" id="spScroll"></div>
+      </div>
+
+      <!-- 牌阵说明 -->
+      <div class="spread-note" id="spreadNote">
+        <span class="dot"></span>
+        <span id="spreadText">单牌指引 —— 今日运势 / 单一问题的核心答案</span>
+      </div>
+
+      <!-- 牌阵布局预览 -->
+      <div class="sp-preview" id="spPreview"></div>
+
+      <!-- 牌阵详细说明 -->
+      <div class="sp-positions" id="spPositions"></div>
+
+      <!-- 问题输入（可选） -->
+      <div class="ask-row">
+        <input type="text" id="questionInput" maxlength="40" placeholder="（可选）写下你的问题…">
+      </div>
+
+      <!-- 牌桌 -->
+      <div class="table" id="cardTable">
+        <div class="deck-zone" id="deckZone">
+          <div class="deck" id="deck">
+            <div class="pile-card d1"></div>
+            <div class="pile-card d2"></div>
+            <div class="pile-card d3"></div>
+            <div class="pile-card d4"></div>
+            <div class="pile-card d5"></div>
+            <div class="deck-glow"></div>
+          </div>
+          <div class="fan-zone" id="fanZone" hidden>
+            <div class="fan" id="fan"></div>
+          </div>
+          <p class="deck-tip" id="deckTip">轻触牌堆洗牌</p>
+          <p class="fan-tip" id="fanTip" hidden>轻触牌堆，抽出属于你的牌</p>
+          <button class="btn-mini auto-pick" id="autoPickBtn" type="button" hidden>✦ 帮我抽完</button>
+        </div>
+        <div class="result-zone" id="resultZone"></div>
+      </div>
+
+      <!-- 翻牌提示 -->
+      <div class="flip-hint" id="flipHint" hidden>
+        <span class="fh-ico">✦</span>
+        <span id="flipHintText">轻触卡牌，翻开通往命运的答案…</span>
+        <b id="flipCount">0 / 3</b>
+      </div>
+      <div class="flip-all-row">
+        <button class="btn-mini" id="flipAllBtn" hidden>一 键 全 开</button>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="actions">
+        <button class="btn btn-primary" id="drawBtn">
+          <span class="btn-ico">✦</span><span id="drawBtnText">开始抽牌</span>
+        </button>
+        <button class="btn btn-ghost" id="resetBtn" hidden>重新抽牌</button>
+      </div>
+
+      <!-- 解读区 -->
+      <div class="reading" id="reading"></div>
+
+      <!-- 解牌 -->
+      <div class="ai-zone" id="aiZone" hidden>
+        <div class="ai-head">
+          <span class="ai-title"><span class="ai-spark">✦</span> 请耿鬼解牌</span>
+          <span class="ai-badge" id="aiStatus">本地解读 · 免费</span>
+        </div>
+        <p class="ai-lead" id="aiLead">
+          牌已经翻开了，要不要听听耿鬼怎么说？它会结合每张牌的位置、正逆位和你的问题，串成一段完整的解读。
+        </p>
+        <div class="ai-ask-row">
+          <input type="text" id="aiQuestion" maxlength="60"
+                 placeholder="（可选）补充或修改你的问题，例如：我该不该换工作？">
+        </div>
+
+        <!-- 免费：本地规则解读 -->
+        <button class="btn btn-ai" id="aiBtn">
+          <span class="btn-ico">🔮</span><span id="aiBtnText">免费解牌（本地规则）</span>
+        </button>
+
+        <!-- AI 深度解读：用自己的密钥，不收费 -->
+        <button class="btn btn-ai-pro" id="aiProBtn">
+          <span class="aip-ico">✦</span>
+          <span class="aip-main">
+            <b id="aiProTitle">AI 深度解读</b>
+            <i id="aiProSub">填自己的密钥即可解锁（不收费）</i>
+          </span>
+          <span class="aip-badge" id="aiProBadge">需填密钥</span>
+        </button>
+        <button class="ai-key-link" id="aiKeyLink" type="button">⚙ 配置我的 AI 密钥（免费）</button>
+
+        <!-- 浏览器内置 AI 增强（免费，可用时才出现） -->
+        <button class="btn-ai-enhance" id="aiEnhanceBtn" hidden></button>
+
+        <!-- AI 追问环节：先问清楚处境，再解读 -->
+        <div class="ai-askbox" id="aiAskBox" hidden>
+          <div class="aak-head">
+            <span class="aak-avatar">👻</span>
+            <div class="aak-bubble">
+              <b>耿鬼想先问你几个问题</b>
+              <i>回答后解读会更贴合你的处境，也可以直接跳过</i>
+            </div>
+          </div>
+          <div class="aak-list" id="aiAskList"></div>
+          <div class="aak-acts">
+            <button class="aak-btn primary" id="aiAskSubmit">
+              <span id="aiAskSubmitText">好 了 ，开 始 解 读</span>
+            </button>
+            <button class="aak-btn ghost" id="aiAskSkip">跳过，直接解读</button>
+          </div>
+        </div>
+
+        <div class="ai-result" id="aiResult" hidden></div>
+      </div>
+    </section>
+
+    <!-- ========== 占卜方式 ========== -->
+    <section class="page" id="page-guide">
+      <h2 class="page-title">占卜方式</h2>
+      <p class="page-lead">塔罗并非预言命运，而是照见内心的镜子。以下方法帮助你更清晰地提问与解读。</p>
+
+      <div class="guide-card">
+        <h3>① 静心提问</h3>
+        <p>找一个安静的环境，深呼吸三次，让心绪平复。在心中默念一个<strong>具体、开放</strong>的问题。</p>
+        <ul>
+          <li>✅ 好的问法：「我该如何处理与同事的这段关系？」</li>
+          <li>❌ 避免的问法：「他到底会不会爱我？」（封闭式、替他人做决定）</li>
+        </ul>
+      </div>
+
+      <div class="guide-card">
+        <h3>② 洗牌与抽牌</h3>
+        <p>轻触牌堆完成洗牌。系统会从完整 78 张牌中随机抽取，每张牌独立判定<strong>正位</strong>或<strong>逆位</strong>。</p>
+        <ul>
+          <li><strong>正位</strong>：牌义正面展开，能量顺畅流动。</li>
+          <li><strong>逆位</strong>：能量受阻、延迟或需要向内反思。</li>
+        </ul>
+        <p class="mini">※ 抽牌为真随机，同一问题建议不反复抽，以免心乱。</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>③ 选择牌阵</h3>
+        <p>共 <strong>19 个牌阵</strong>，按用途分为五类：<em>通用 8</em> · <em>感情 4</em> · <em>事业 2</em> · <em>学业 1</em> · <em>自我 4</em>。在「抽牌」页顶部的分类栏里切换，点选牌阵后即可看到摆放布局与每个位置的含义。</p>
+
+        <div class="spread-cat">通用<i>8 个</i></div>
+        <div class="spread-list">
+          <div class="spread-item">
+            <span class="spread-badge">1 张</span>
+            <div>
+              <strong>单牌指引</strong>
+              <p>针对一个具体问题，快速获取一个核心答案或今日指引。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">3 张</span>
+            <div>
+              <strong>三牌阵 · 时间流</strong>
+              <p>依次为：<em>过去</em> → <em>现在</em> → <em>未来</em>，看清事情的发展脉络。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">3 张</span>
+            <div>
+              <strong>三牌阵 · 处境分析</strong>
+              <p>依次为：<em>现状</em> → <em>建议</em> → <em>结果</em>。与时间流不同，它不只说明发生了什么，更回答「我该怎么做」。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">5 张</span>
+            <div>
+              <strong>五牌阵 · 深入分析</strong>
+              <p>依次为：<em>现状</em> → <em>阻碍</em> → <em>你的力量</em> → <em>建议</em> → <em>可能结果</em>，层层剥开问题的核心。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">7 张</span>
+            <div>
+              <strong>马蹄铁牌阵</strong>
+              <p>七张牌沿 V 字弧线展开，从过去爬升越过阻碍，再到最终结果；处于弧线最高点的牌是解读重心。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">7 张</span>
+            <div>
+              <strong>六芒星牌阵</strong>
+              <p>正反两个三角交叠：上方三角看<em>时间线</em>（过去 / 现在 / 未来），下方三角看<em>对策</em>（行动 / 阻碍 / 助力），中央一张给出综合结果。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">10 张</span>
+            <div>
+              <strong>凯尔特十字</strong>
+              <p>塔罗最经典的综合牌阵。中心十字读懂问题本质（第 2 张横放，是绊脚石也可能是垫脚石），右侧立柱由下往上读出时间推进。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">12 张</span>
+            <div>
+              <strong>黄道十二宫</strong>
+              <p>十二张牌环列对应占星十二宫，全面扫描人生各个领域。需要一点占星基础，属于进阶牌阵。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="spread-cat">感情<i>4 个</i></div>
+        <div class="spread-list">
+          <div class="spread-item">
+            <span class="spread-badge">5 张</span>
+            <div>
+              <strong>关系牌阵 · 双人</strong>
+              <p>依次为：<em>你的心意</em> / <em>对方的心意</em> / <em>关系现状</em> / <em>关系阻碍</em> / <em>发展走向</em>。先对比两边心意的落差，再看关系是被拉近还是推远。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">5 张</span>
+            <div>
+              <strong>二选一牌阵</strong>
+              <p>站在岔路口时使用：顶端的牌是你现在的处境，左右两条分支分别给出选项 A 与 B 的<em>走向</em>与<em>结果</em>。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">7 张</span>
+            <div>
+              <strong>恋爱深度牌阵</strong>
+              <p>适合已有感情基础却遇到瓶颈的关系。精华在「该做的事」与「不该做」两张牌的一正一反，直接给出行动清单。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">8 张</span>
+            <div>
+              <strong>维纳斯之爱</strong>
+              <p>以金星之名的结构细腻牌阵：上方三角看两人各自的看法与相互影响，下方看障碍、此后心态与最终结果。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="spread-cat">事业<i>2 个</i></div>
+        <div class="spread-list">
+          <div class="spread-item">
+            <span class="spread-badge">5 张</span>
+            <div>
+              <strong>事业牌阵</strong>
+              <p>换工作、升职、创业前的一次全面体检：从事业目标到优势与阻碍的力量对比，再落到行动与前景。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">4 张</span>
+            <div>
+              <strong>四元素财富阵</strong>
+              <p>用<em>火</em>（行动力）<em>土</em>（资源基础）<em>风</em>（信息与判断）<em>水</em>（心态）分解财务状况，找出失衡的那一环。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="spread-cat">学业<i>1 个</i></div>
+        <div class="spread-list">
+          <div class="spread-item">
+            <span class="spread-badge">4 张</span>
+            <div>
+              <strong>学业牌阵</strong>
+              <p>考前或调整学习方法时使用，构成一条诊断链：<em>当前基础</em> → <em>遇到瓶颈</em> → <em>有效方法</em> → <em>预期成果</em>。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="spread-cat">自我<i>4 个</i></div>
+        <div class="spread-list">
+          <div class="spread-item">
+            <span class="spread-badge">3 张</span>
+            <div>
+              <strong>月相牌阵</strong>
+              <p>以月亮盈亏为时间框架：<em>新月播种</em> / <em>满月显化</em> / <em>残月放下</em>。适合月初抽取、月底回看验证。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">3 张</span>
+            <div>
+              <strong>是非牌阵</strong>
+              <p>面对「要不要 / 会不会」这类封闭式问题：左右两张是支持与阻挡的力量，中央给出答案倾向。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">9 张</span>
+            <div>
+              <strong>九宫格阵</strong>
+              <p>3×3 全方位扫描。中央「问题核心」是全阵锚点，四周八张从外界、自身、时间与表里等角度包裹它。</p>
+            </div>
+          </div>
+          <div class="spread-item">
+            <span class="spread-badge">10 张</span>
+            <div>
+              <strong>生命之树</strong>
+              <p>源自卡巴拉生命之树的十个质点，从顶端的<em>王冠</em>到底端的<em>王国</em>纵贯灵性与现实，是最深邃的自我探索牌阵。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-card">
+        <h3>④ 解读结果</h3>
+        <p>结合牌面位置与正逆位含义综合理解。抽牌结果会<strong>自动保存</strong>，可在「我的」页随时回看与搜索。</p>
+        <p class="mini">塔罗提供视角与启发，最终的选择与行动，始终掌握在你自己手中。</p>
+      </div>
+    </section>
+
+    <!-- ========== 我的（账号 / 点数 / 记录） ========== -->
+    <section class="page" id="page-history">
+      <h2 class="page-title">我 的</h2>
+      <p class="page-lead">抽牌与测评记录只保存在本机，不上传、不联网。AI 深度解读用你自己的密钥，请求直接发给服务商，不经过我们。</p>
+
+      <!-- 账号卡片 -->
+      <div class="account-card" id="accountCard"></div>
+
+      <!-- AI 深度解读 · 自带密钥 -->
+      <div class="aikey-card" id="aiKeyCard">
+        <div class="aikey-card-main">
+          <b>✦ AI 深度解读</b>
+          <span id="aiKeyState">未配置 · 填入你自己的 API 密钥即可解锁</span>
+        </div>
+        <button class="aikey-card-btn" id="aiKeyBtn" type="button">设置</button>
+      </div>
+
+      <!-- 点数概览 -->
+      <div class="me-stats" id="meStats">
+        <div class="me-cell"><b id="meCredits">0</b><span>剩余点数</span></div>
+        <div class="me-cell"><b id="meBought">0</b><span>累计购买</span></div>
+        <div class="me-cell"><b id="meUsed">0</b><span>已使用</span></div>
+      </div>
+      <button class="me-buy" id="meBuy">🎟️ 购买点数</button>
+
+      <!-- 抽牌记录 -->
+      <div class="me-section-head"><span>🔮 抽牌记录</span></div>
+      <div class="dict-search">
+        <span class="search-ico">🔍</span>
+        <input type="text" id="historySearch" placeholder="搜索牌名 / 问题 / 解读…">
+      </div>
+
+      <div class="history-toolbar" id="historyToolbar">
+        <span class="hist-count" id="histCount">共 0 条记录</span>
+        <button class="link-danger" id="clearHistory">清空全部</button>
+      </div>
+
+      <div class="history-list" id="historyList"></div>
+      <p class="empty-tip" id="histEmpty">还没有抽牌记录，去「抽牌」页试试吧 ✦</p>
+
+      <!-- 测评记录 -->
+      <div class="me-section-head"><span>🧪 测评记录</span></div>
+      <div class="quiz-hist-list" id="quizHistList"></div>
+      <p class="empty-tip" id="quizHistEmpty">还没有测评记录，去「探索」页做一套吧 ✦</p>
+    </section>
+
+    <!-- ========== 牌组皮肤 ========== -->
+    <section class="page" id="page-decks">
+      <h2 class="page-title">牌 组 皮 肤</h2>
+      <p class="page-lead">共 7 套公版塔罗牌，全部 78 张齐全。选一套你喜欢的风格，抽牌立刻生效。</p>
+
+      <div class="deck-grid" id="deckGrid"></div>
+
+      <div class="deck-preview-box">
+        <div class="dpb-title">当前牌组 · <span id="deckPreviewName">韦特原版</span></div>
+        <div class="dpb-row" id="deckPreviewRow"></div>
+        <div class="deck-note" id="deckNote" hidden></div>
+      </div>
+    </section>
+
+    <!-- ========== 探索（心理测试 + 小游戏） ========== -->
+    <section class="page" id="page-quiz">
+      <!-- 小游戏入口卡片：与 quiz.js 渲染的 #quizRoot 平级，互不干扰 -->
+      <div class="explore-game-section">
+        <div class="explore-game-head"><span class="eg-ico">🎮</span><span>小游戏</span></div>
+        <div class="explore-game-card" id="exploreGameCard" role="button" tabindex="0" aria-label="打开合成黑洞小游戏">
+          <div class="eg-thumb"><img src="games/heibao/assets/orbs/orb_11_blackhole.webp" alt="合成黑洞"></div>
+          <div class="eg-info">
+            <div class="eg-title">合成黑洞</div>
+            <div class="eg-desc">把异次元小球丢进黑洞，合成更大的星体，带耿鬼一起回家 ✦</div>
+          </div>
+          <button class="eg-play" id="explorePlayBtn" type="button">开始游戏 ›</button>
+        </div>
+      </div>
+      <div id="quizRoot"></div>
+    </section>
+
+  </main>
+
+  <!-- 底部导航 -->
+  <nav class="tabbar">
+    <button class="tab active" data-page="draw">
+      <span class="tab-ico">✦</span><span>抽牌</span>
+    </button>
+    <button class="tab" data-page="guide">
+      <span class="tab-ico">📖</span><span>方式</span>
+    </button>
+    <button class="tab" data-page="decks">
+      <span class="tab-ico">🎴</span><span>牌组</span>
+    </button>
+    <button class="tab" data-page="quiz">
+      <span class="tab-ico">🧪</span><span>探索</span>
+    </button>
+    <button class="tab" data-page="history">
+      <span class="tab-ico">👤</span><span>我的</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- 解牌点数 / 购买弹窗 -->
+<div class="paymodal" id="payModal" hidden>
+  <div class="pm-mask" id="pmMask"></div>
+  <div class="pm-sheet" id="pmSheet">
+    <button class="pm-close" id="pmClose" aria-label="关闭">✕</button>
+
+    <div class="pm-head">
+      <span class="pm-ico">🎟️</span>
+      <div>
+        <h3 class="pm-title" id="pmTitle">解牌点数</h3>
+        <p class="pm-sub" id="pmSub">按牌计费 · 1 张牌 = 1 点 ≈ 1 毛钱</p>
+      </div>
+    </div>
+
+    <!-- 点数概览 -->
+    <div class="pm-balance">
+      <div class="pmb-cell">
+        <span class="pmb-num" id="pmbCredits">0</span>
+        <span class="pmb-label">剩余点数</span>
+      </div>
+      <div class="pmb-cell">
+        <span class="pmb-num" id="pmbBought">0</span>
+        <span class="pmb-label">累计购买</span>
+      </div>
+      <div class="pmb-cell">
+        <span class="pmb-num" id="pmbUsed">0</span>
+        <span class="pmb-label">已使用</span>
+      </div>
+    </div>
+
+    <!-- 模拟支付提示 -->
+    <div class="pm-mock" id="pmMock" hidden>⚠️ 当前为模拟支付模式，下单后点「我已付款」即可拿码，不会真的扣款。</div>
+    <div class="pm-nokey" id="pmNoKey" hidden>⚠️ 服务端尚未配置 AI 模型 Key，AI 解读暂不可用（免费本地解读仍可正常使用）。</div>
+
+    <!-- 套餐 -->
+    <div class="pm-section-title">选择套餐</div>
+    <div class="pm-plans" id="pmPlans"></div>
+
+    <!-- 兑换码 -->
+    <div class="pm-section-title">兑换码</div>
+    <div class="pm-redeem">
+      <input type="text" id="pmCodeInput" maxlength="20" placeholder="粘贴兑换码，如 GG-XXXX-XXXX-XXXX"
+             autocomplete="off" spellcheck="false">
+      <button class="pm-redeem-btn" id="pmRedeemBtn">兑换</button>
+    </div>
+    <p class="pm-redeem-msg" id="pmRedeemMsg" hidden></p>
+
+    <p class="pm-foot">按牌计费：1 张牌 = 1 点，约 1 毛钱。点数保存在本设备，清空浏览器数据会丢失，请及时使用。</p>
+  </div>
+</div>
+
+<!-- 大图查看 -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-mask" id="modalMask"></div>
+  <div class="modal-body" id="modalBody"></div>
+</div>
+
+<!-- 合成黑洞 · 全屏游戏遮罩 -->
+<div class="heibao-overlay" id="heibaoOverlay" hidden>
+  <div class="hb-overlay-bar">
+    <span class="hb-overlay-title">合成黑洞</span>
+    <button class="hb-overlay-close" id="hbOverlayClose" aria-label="关闭游戏">✕</button>
+  </div>
+  <iframe class="heibao-frame" id="heibaoFrame" title="合成黑洞" allow="autoplay"></iframe>
+</div>
+
+<script src="data.js?v=25"></script>
+<script src="gengar.js?v=29"></script>
+<script src="reading.js?v=25"></script>
+<script src="quiz-data.js?v=25"></script>
+<script src="card-visual.js?v=1"></script>
+<script src="quiz.js?v=29"></script>
+<script src="ai-key.js?v=3"></script>
+<script src="app.js?v=41"></script>
+<script src="explore.js?v=1"></script>
+<script src="pwa.js?v=1"></script>
+</body>
+</html>
