@@ -41,11 +41,20 @@
       "@keyframes pwaIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}" +
       ".pwa-tip b{color:#e3c6ff;font-weight:600}" +
       ".pwa-tip .pwa-x{margin-left:auto;flex:none;padding:0 2px;border:0;background:none;color:#b9a8d6;" +
-      "font-size:18px;line-height:1;cursor:pointer}";
+      "font-size:18px;line-height:1;cursor:pointer}" +
+      "body.hb-lock .pwa-tip{display:none}";
     document.head.appendChild(s);
   }
 
+  var tipShown = false;
   function showTip() {
+    if (tipShown) return;
+    // 游戏遮罩打开时不弹提示，避免遮挡游戏内容；等关闭后再补上
+    if (document.body.classList.contains("hb-lock")) {
+      setTimeout(showTip, 1200);
+      return;
+    }
+    tipShown = true;
     css();
     var tip = document.createElement("div");
     tip.className = "pwa-tip";

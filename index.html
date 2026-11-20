@@ -16,7 +16,7 @@
 <link rel="preload" as="image" href="cards/attack-1.png">
 <link rel="preload" as="image" href="cards/attack-2.png">
 <link rel="preload" as="image" href="cards/attack-3.png">
-<link rel="stylesheet" href="style.css?v=34">
+<link rel="stylesheet" href="style.css?v=35">
 <link rel="stylesheet" href="explore.css?v=1">
 <link rel="stylesheet" href="app-offline.css?v=1">
 <link rel="stylesheet" href="app-smooth.css?v=1">
@@ -502,6 +502,14 @@
           </div>
           <button class="eg-play" id="explorePlayBtn" type="button">开始游戏 ›</button>
         </div>
+        <div class="explore-game-card" id="exploreMemoryCard" role="button" tabindex="0" aria-label="打开塔罗记忆翻牌小游戏">
+          <div class="eg-thumb"><img src="cards/decks/waite/fool.jpg" alt="塔罗记忆"></div>
+          <div class="eg-info">
+            <div class="eg-title">塔罗记忆</div>
+            <div class="eg-desc">60 秒内翻开配对，点亮卡面。集齐一套解锁新卡面，抽牌也能用 ✦</div>
+          </div>
+          <button class="eg-play" type="button">开始游戏 ›</button>
+        </div>
       </div>
       <div id="quizRoot"></div>
     </section>
@@ -595,6 +603,15 @@
   <iframe class="heibao-frame" id="heibaoFrame" title="合成黑洞" allow="autoplay"></iframe>
 </div>
 
+<!-- 塔罗记忆 · 全屏游戏遮罩 -->
+<div class="heibao-overlay" id="memoryOverlay" hidden>
+  <div class="hb-overlay-bar">
+    <span class="hb-overlay-title">塔罗记忆</span>
+    <button class="hb-overlay-close" id="memoryOverlayClose" aria-label="关闭游戏">✕</button>
+  </div>
+  <iframe class="heibao-frame" id="memoryFrame" title="塔罗记忆"></iframe>
+</div>
+
 <script src="data.js?v=25"></script>
 <script src="gengar.js?v=29"></script>
 <script src="reading.js?v=25"></script>
@@ -602,8 +619,8 @@
 <script src="card-visual.js?v=1"></script>
 <script src="quiz.js?v=29"></script>
 <script src="ai-key.js?v=3"></script>
-<script src="app.js?v=41"></script>
-<script src="explore.js?v=1"></script>
-<script src="pwa.js?v=1"></script>
+<script src="app.js?v=42"></script>
+<script src="explore.js?v=3"></script>
+<script src="pwa.js?v=3"></script>
 </body>
 </html>

@@ -534,6 +534,29 @@
   ];
 
   const DECK_KEY = "tarot_deck_v1";
+  /* 记忆翻牌小游戏共享的解锁存档：{ <deckId>: [cardId, ...] }，按「牌组 × 牌」分别记 */
+  const UNLOCK_KEY = "tarot_deck_unlock_v1";
+
+  /* ----- 卡面解锁状态（与 games/memory 读写同一份 localStorage） ----- */
+  function loadDeckUnlock() {
+    try {
+      const raw = localStorage.getItem(UNLOCK_KEY);
+      const o = raw ? JSON.parse(raw) : {};
+      return o && typeof o === "object" ? o : {};
+    } catch (e) { return {}; }
+  }
+  function unlockedCount(save, id) {
+    const a = save[id];
+    return Array.isArray(a) ? a.length : 0;
+  }
+  /* 链式解锁：第一套（韦特原版）默认开放；前一套集齐 78 张才开放本套 */
+  function isDeckOpen(save, idx) {
+    if (idx <= 0) return true;
+    return unlockedCount(save, DECKS[idx - 1].id) >= 78;
+  }
+  function isDeckOpenById(save, id) {
+    return isDeckOpen(save, DECKS.findIndex((d) => d.id === id));
+  }
   const STORAGE_KEY = "tarot_history_v1";
   /* 未完成的抽牌草稿：付款跳转后回到主站时恢复牌面，避免用户重抽 */
   const DRAFT_KEY = "tarot_draft_v1";
@@ -654,14 +677,22 @@
   function renderDecks() {
     const wrap = $("#deckGrid");
     if (!wrap) return;
-    wrap.innerHTML = DECKS.map((d) => {
+    const unlockSave = loadDeckUnlock();
+    wrap.innerHTML = DECKS.map((d, idx) => {
       const active = d.id === currentDeck.id;
+      const open = isDeckOpen(unlockSave, idx);
+      const got = unlockedCount(unlockSave, d.id);
       const thumbs = PREVIEW_IDS.map(
         (i) => imgTag(d, TAROT_DATA[i].img, "", TAROT_DATA[i].name)
       ).join("");
+      const badge = active
+        ? '<span class="deck-check">✦ 使用中</span>'
+        : open
+          ? '<span class="deck-unlock-prog">' + (got >= 78 ? "已集齐" : "点亮 " + got + "/78") + '</span>'
+          : '<span class="deck-lock">🔒 玩记忆翻牌解锁</span>';
       return (
-        '<button class="deck-card' + (active ? " active" : "") +
-          '" data-deck="' + d.id + '">' +
+        '<button class="deck-card' + (active ? " active" : "") + (open ? "" : " locked") +
+          '" data-deck="' + d.id + '"' + (open ? "" : ' aria-disabled="true"') + '>' +
           '<div class="deck-thumb">' + thumbs + "</div>" +
           '<div class="deck-meta">' +
             '<div class="deck-name-row">' +
@@ -671,7 +702,7 @@
             '<p class="deck-desc">' + esc(d.desc) + "</p>" +
             '<span class="deck-credit">' + esc(d.credit) + "</span>" +
           "</div>" +
-          (active ? '<span class="deck-check">✦ 使用中</span>' : "") +
+          badge +
         "</button>"
       );
     }).join("");
@@ -714,6 +745,17 @@
 
   function setDeck(id, opts) {
     opts = opts || {};
+    // 未解锁的牌组不允许选用（记忆翻牌集齐前一套才开放）
+    const save = loadDeckUnlock();
+    const targetIdx = DECKS.findIndex((d) => d.id === id);
+    if (targetIdx < 0) return;
+    if (!isDeckOpen(save, targetIdx)) {
+      if (!opts.silent) {
+        const prevName = DECKS[Math.max(0, targetIdx - 1)].name;
+        toast("「" + DECKS[targetIdx].name + "」尚未解锁 · 在探索页玩记忆翻牌集齐「" + prevName + "」78 张即可使用");
+      }
+      return;
+    }
     const d = getDeckById(id);
     const changed = d.id !== currentDeck.id;
     currentDeck = d;
@@ -743,6 +785,8 @@
   function loadDeck() {
     let id = DECKS[0].id;
     try { id = localStorage.getItem(DECK_KEY) || id; } catch (e) {}
+    // 存档里的牌组若尚未解锁（比如清过解锁档），回退到默认
+    if (!isDeckOpenById(loadDeckUnlock(), id)) id = DECKS[0].id;
     currentDeck = getDeckById(id);
   }
 
@@ -4473,6 +4517,19 @@
       setTimeout(() => sp.remove(), 800);
     }
   }
+
+  /* 记忆翻牌通关点亮牌后，游戏 iframe 会 postMessage 通知；刷新牌组页的解锁状态 */
+  window.addEventListener("message", (e) => {
+    if (!e || !e.data || typeof e.data !== "object") return;
+    if (e.data.type !== "memory:unlock") return;
+    renderDecks();
+    // 若当前牌组恰好被解锁链影响，重新校验
+    if (!isDeckOpenById(loadDeckUnlock(), currentDeck.id)) {
+      currentDeck = DECKS[0];
+      try { localStorage.setItem(DECK_KEY, currentDeck.id); } catch (err) {}
+      renderDecks();
+    }
+  });
 
   /* ============================================================
      初始化

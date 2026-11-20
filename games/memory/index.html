@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>塔罗记忆翻牌</title>
+<link rel="stylesheet" href="memory.css?v=1">
+<script src="../../data.js"></script>
+</head>
+<body>
+<div class="mem-root">
+
+  <!-- 开局：选牌组 -->
+  <section class="mem-setup" id="memSetup">
+    <div class="mem-head">
+      <div class="mem-title">塔罗记忆</div>
+      <div class="mem-sub">翻开两张相同的牌，在时间内全部配对</div>
+    </div>
+    <div class="mem-tip">普通模式 · 16 张 / 8 对 · 60 秒。通关点亮本局的牌，集齐一套即可抽牌时使用。</div>
+    <div class="mem-section-label">选择卡面</div>
+    <div class="mem-decks" id="memDecks"></div>
+    <button class="mem-primary" id="memStart" type="button">开始游戏</button>
+  </section>
+
+  <!-- 游戏中 -->
+  <section class="mem-play" id="memPlay" hidden>
+    <div class="mem-hud">
+      <div class="mem-hud-item"><span class="mem-hud-label">剩余</span><span class="mem-hud-value" id="memTime">60</span></div>
+      <div class="mem-hud-item"><span class="mem-hud-label">步数</span><span class="mem-hud-value" id="memMoves">0</span></div>
+      <div class="mem-hud-item"><span class="mem-hud-label">连击</span><span class="mem-hud-value" id="memCombo">×0</span></div>
+      <div class="mem-hud-deck" id="memHudDeck"></div>
+    </div>
+    <div class="mem-progress"><div class="mem-progress-bar" id="memProgressBar"></div></div>
+    <div class="mem-grid" id="memGrid"></div>
+  </section>
+
+  <!-- 结算 -->
+  <section class="mem-result" id="memResult" hidden>
+    <div class="mem-result-icon" id="memResultIcon">✦</div>
+    <div class="mem-result-title" id="memResultTitle">通关</div>
+    <div class="mem-result-desc" id="memResultDesc"></div>
+    <div class="mem-stats" id="memStats"></div>
+    <div class="mem-unlocks" id="memUnlocks"></div>
+    <div class="mem-actions">
+      <button class="mem-primary" id="memAgain" type="button">再玩一次</button>
+      <button class="mem-ghost" id="memBack" type="button">换卡面</button>
+    </div>
+  </section>
+
+</div>
+<script src="memory.js?v=1"></script>
+</body>
+</html>

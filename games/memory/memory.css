@@ -1,0 +1,191 @@
+/* 塔罗记忆翻牌 · 深色主题，与合成黑洞遮罩一致 */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  background: #0a0612;
+  color: #f3eaff;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  overflow-x: hidden;
+}
+[hidden] { display: none !important; }
+button { font-family: inherit; }
+
+.mem-root {
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: 100%;
+  padding: 18px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ---------- 开局 ---------- */
+.mem-head { text-align: center; padding: 10px 0 4px; }
+.mem-title {
+  font-size: 26px; font-weight: 800; letter-spacing: 3px;
+  background: linear-gradient(135deg, #ffe9a8, #d9b46a);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.mem-sub { font-size: 13px; opacity: .7; margin-top: 8px; }
+.mem-tip {
+  font-size: 12px; line-height: 1.6; opacity: .72;
+  background: rgba(123, 91, 214, .14);
+  border: 1px solid rgba(179, 150, 240, .22);
+  border-radius: 12px; padding: 11px 13px; margin: 16px 0 20px;
+}
+.mem-section-label {
+  font-size: 13px; font-weight: 700; opacity: .85;
+  margin: 0 0 10px 2px; letter-spacing: 1px;
+}
+.mem-decks { display: flex; flex-direction: column; gap: 10px; }
+
+.mem-deck {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 11px 13px; border-radius: 14px;
+  border: 1.5px solid rgba(179, 150, 240, .24);
+  background: linear-gradient(160deg, rgba(123, 91, 214, .16), rgba(30, 17, 71, .8));
+  color: #f3eaff; text-align: left; cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.mem-deck:active { transform: scale(.99); }
+.mem-deck.active {
+  border-color: #d9b46a;
+  background: linear-gradient(160deg, rgba(217, 180, 106, .2), rgba(123, 91, 214, .26));
+  box-shadow: 0 0 0 1px rgba(243, 220, 164, .3);
+}
+.mem-deck.locked { opacity: .42; cursor: not-allowed; }
+.mem-deck-thumb {
+  flex: 0 0 auto; width: 44px; height: 60px; border-radius: 6px;
+  object-fit: cover; border: 1px solid rgba(217, 180, 106, .5); background: #12092b;
+}
+.mem-deck-info { flex: 1 1 auto; min-width: 0; display: block; }
+.mem-deck-name { display: block; font-size: 15px; font-weight: 700; line-height: 1.3; }
+.mem-deck-prog { display: block; font-size: 12px; opacity: .7; margin-top: 3px; line-height: 1.3; }
+.mem-deck-flag {
+  flex: 0 0 auto; font-size: 11px; padding: 4px 9px; border-radius: 999px;
+  background: rgba(217, 180, 106, .2); color: #ffe9a8; border: 1px solid rgba(217, 180, 106, .4);
+}
+.mem-deck.locked .mem-deck-flag { background: rgba(255,255,255,.08); color: #cbb9e8; border-color: rgba(255,255,255,.14); }
+
+.mem-primary {
+  display: block; width: 100%; margin-top: 20px;
+  padding: 15px; border: none; border-radius: 14px; cursor: pointer;
+  background: linear-gradient(135deg, #ffe9a8, #d9b46a);
+  color: #3a2300; font-size: 16px; font-weight: 800; letter-spacing: 2px;
+  box-shadow: 0 6px 18px rgba(217, 180, 106, .28);
+}
+.mem-primary:active { transform: scale(.98); }
+.mem-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---------- 游戏中 ---------- */
+.mem-hud {
+  display: flex; align-items: center; gap: 8px; margin: 4px 0 12px;
+}
+.mem-hud-item {
+  flex: 0 0 auto; min-width: 62px;
+  background: rgba(123, 91, 214, .16); border: 1px solid rgba(179, 150, 240, .2);
+  border-radius: 11px; padding: 7px 10px; text-align: center;
+}
+.mem-hud-label { display: block; font-size: 10px; opacity: .6; }
+.mem-hud-value { display: block; font-size: 20px; font-weight: 800; color: #ffe9a8; line-height: 1.2; }
+.mem-hud-deck { flex: 1 1 auto; text-align: right; font-size: 11px; opacity: .65; }
+.mem-progress {
+  height: 4px; border-radius: 4px; background: rgba(255,255,255,.1);
+  overflow: hidden; margin-bottom: 16px;
+}
+.mem-progress-bar {
+  height: 100%; width: 0; border-radius: 4px;
+  background: linear-gradient(90deg, #7b5bd6, #d9b46a);
+  transition: width .3s;
+}
+
+.mem-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px;
+}
+.mem-card {
+  position: relative; aspect-ratio: 0.68; cursor: pointer;
+  perspective: 600px;
+}
+.mem-card-inner {
+  position: absolute; inset: 0;
+  transform-style: preserve-3d;
+  transition: transform .34s cubic-bezier(.4, 0, .2, 1);
+}
+.mem-card.flipped .mem-card-inner,
+.mem-card.matched .mem-card-inner { transform: rotateY(180deg); }
+.mem-face, .mem-back {
+  position: absolute; inset: 0; border-radius: 8px;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  overflow: hidden; border: 1.5px solid rgba(217, 180, 106, .45);
+}
+.mem-back {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(217, 180, 106, .22), transparent 46%),
+    linear-gradient(155deg, #3d2360, #1b0f33);
+  display: flex; align-items: center; justify-content: center;
+}
+.mem-back-mark {
+  width: 42%; aspect-ratio: 1; border-radius: 50%;
+  border: 1.5px solid rgba(217, 180, 106, .55);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 233, 168, .85); font-size: 18px;
+}
+.mem-face {
+  transform: rotateY(180deg);
+  background: #12092b;
+  display: flex; flex-direction: column;
+}
+.mem-face img { width: 100%; flex: 1 1 auto; object-fit: cover; display: block; }
+.mem-face-name {
+  flex: 0 0 auto; font-size: 10px; text-align: center;
+  padding: 2px 0; background: rgba(10, 6, 18, .88); color: #ffe9a8;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mem-card.matched .mem-face { border-color: #7fe0a8; box-shadow: 0 0 0 1.5px rgba(127, 224, 168, .6); }
+.mem-card.wrong .mem-face { border-color: #ff9a9a; }
+
+/* ---------- 结算 ---------- */
+.mem-result { text-align: center; padding: 26px 4px; }
+.mem-result-icon {
+  font-size: 52px; line-height: 1;
+  background: linear-gradient(135deg, #ffe9a8, #d9b46a);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.mem-result-icon.fail { background: none; color: #b9a7d8; }
+.mem-result-title { font-size: 24px; font-weight: 800; margin: 12px 0 6px; letter-spacing: 2px; }
+.mem-result-desc { font-size: 13px; opacity: .75; line-height: 1.6; }
+.mem-stats {
+  display: flex; justify-content: center; gap: 10px; margin: 20px 0;
+}
+.mem-stat {
+  min-width: 78px; background: rgba(123, 91, 214, .16);
+  border: 1px solid rgba(179, 150, 240, .2); border-radius: 12px; padding: 10px;
+}
+.mem-stat-label { font-size: 10px; opacity: .6; }
+.mem-stat-value { font-size: 20px; font-weight: 800; color: #ffe9a8; margin-top: 3px; }
+.mem-unlocks {
+  text-align: left; margin: 18px 0; max-height: 42vh; overflow-y: auto;
+  border: 1px solid rgba(179, 150, 240, .18); border-radius: 14px;
+  background: rgba(20, 10, 35, .6); padding: 6px 14px;
+}
+.mem-unlock-title { font-size: 13px; font-weight: 700; color: #ffe9a8; padding: 10px 0 4px; }
+.mem-unlock {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.mem-unlock:last-child { border-bottom: none; }
+.mem-unlock-name { flex: 0 0 84px; font-size: 13px; font-weight: 700; color: #e6d4ff; }
+.mem-unlock-text { flex: 1 1 auto; font-size: 12px; line-height: 1.6; opacity: .78; }
+.mem-newdeck {
+  font-size: 13px; line-height: 1.6; color: #ffe9a8;
+  background: rgba(217, 180, 106, .14); border: 1px solid rgba(217, 180, 106, .35);
+  border-radius: 12px; padding: 11px 13px; margin: 14px 0;
+}
+.mem-actions { display: flex; gap: 10px; }
+.mem-actions .mem-primary { flex: 2 1 auto; margin-top: 0; }
+.mem-ghost {
+  flex: 0 0 auto; white-space: nowrap; border-radius: 14px; cursor: pointer;
+  padding: 0 18px;
+  border: 1px solid rgba(179, 150, 240, .35);
+  background: rgba(123, 91, 214, .14); color: #f3eaff;
+  font-size: 15px; font-weight: 700;
+}
+.mem-ghost:active { transform: scale(.98); }
