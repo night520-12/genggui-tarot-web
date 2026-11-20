@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>塔罗记忆翻牌</title>
-<link rel="stylesheet" href="memory.css?v=2">
+<link rel="stylesheet" href="memory.css?v=3">
 <script src="../../data.js"></script>
 </head>
 <body>
 <div class="mem-root">
+  <button class="mem-sound" id="memSound" type="button" aria-label="关闭声音" title="声音开关">🔊</button>
 
   <!-- 开局：选牌组 -->
   <section class="mem-setup" id="memSetup">
@@ -16,7 +17,14 @@
       <div class="mem-title">塔罗记忆</div>
       <div class="mem-sub">翻开两张相同的牌，在时间内全部配对</div>
     </div>
-    <div class="mem-tip">普通模式 · 16 张 / 8 对 · 60 秒。通关点亮本局的牌，集齐一套即可抽牌时使用。</div>
+    <div class="mem-level" id="memLevelBox">
+      <div class="mem-level-head">
+        <span>当前难度 · <b id="memLevelName">标准</b></span>
+        <span class="mem-level-rule">通关升级 / 失败降级</span>
+      </div>
+      <div class="mem-level-track" id="memLevelTrack"></div>
+    </div>
+    <div class="mem-tip">闯关难度自动递增：轻松 6 对 75 秒、标准 8 对 60 秒、挑战 10 对 70 秒、大师 12 对 80 秒。挑战 / 大师错配会扣时间。通关点亮本局的牌（难度越高点亮越多），集齐一套即可抽牌时使用。</div>
     <button class="mem-primary mem-primary-top" id="memStart" type="button">开始游戏</button>
     <div class="mem-section-label">选择卡面</div>
     <div class="mem-decks" id="memDecks"></div>
@@ -39,6 +47,7 @@
     <div class="mem-result-icon" id="memResultIcon">✦</div>
     <div class="mem-result-title" id="memResultTitle">通关</div>
     <div class="mem-result-desc" id="memResultDesc"></div>
+    <div class="mem-level-change" id="memLevelChange" hidden></div>
     <div class="mem-stats" id="memStats"></div>
     <div class="mem-unlocks" id="memUnlocks"></div>
     <div class="mem-actions">
@@ -48,6 +57,6 @@
   </section>
 
 </div>
-<script src="memory.js?v=2"></script>
+<script src="memory.js?v=3"></script>
 </body>
 </html>

@@ -15,6 +15,44 @@ button { font-family: inherit; }
   margin: 0 auto;
   min-height: 100%;
   padding: 18px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  position: relative;
+}
+
+/* 声音开关（右上角，全局固定在本容器内） */
+.mem-sound {
+  position: absolute; top: 14px; right: 16px; z-index: 30;
+  width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+  border: 1px solid rgba(217, 180, 106, .4);
+  background: rgba(30, 17, 71, .85); color: #ffe9a8; font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.mem-sound:active { transform: scale(.93); }
+
+/* ---------- 难度条 ---------- */
+.mem-level {
+  background: rgba(123, 91, 214, .14);
+  border: 1px solid rgba(179, 150, 240, .22);
+  border-radius: 12px; padding: 11px 13px; margin: 14px 0 12px;
+}
+.mem-level-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; opacity: .9;
+}
+.mem-level-head b { color: #ffe9a8; font-size: 14px; }
+.mem-level-rule { font-size: 11px; opacity: .6; }
+.mem-level-track { display: flex; gap: 6px; margin-top: 10px; }
+.mem-level-dot {
+  flex: 1 1 0; min-width: 0; text-align: center;
+  font-size: 11px; padding: 5px 0; border-radius: 8px;
+  color: #cbb9e8; background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mem-level-dot.passed { background: rgba(123, 91, 214, .3); color: #e6d4ff; }
+.mem-level-dot.now {
+  background: linear-gradient(135deg, #ffe9a8, #d9b46a);
+  color: #3a2300; font-weight: 700; border-color: #d9b46a;
 }
 
 /* ---------- 开局 ---------- */
@@ -89,9 +127,20 @@ button { font-family: inherit; }
   display: flex; align-items: center; gap: 8px; margin: 4px 0 12px;
 }
 .mem-hud-item {
-  flex: 0 0 auto; min-width: 62px;
+  flex: 0 0 auto; min-width: 62px; position: relative;
   background: rgba(123, 91, 214, .16); border: 1px solid rgba(179, 150, 240, .2);
   border-radius: 11px; padding: 7px 10px; text-align: center;
+}
+.mem-timeslip {
+  position: absolute; top: -8px; right: -6px;
+  color: #ff9a9a; font-size: 13px; font-weight: 800;
+  text-shadow: 0 0 8px rgba(255, 80, 80, .6);
+  animation: memSlip .9s ease-out forwards; pointer-events: none;
+}
+@keyframes memSlip {
+  0% { opacity: 0; transform: translateY(4px) }
+  20% { opacity: 1; transform: translateY(-8px) }
+  100% { opacity: 0; transform: translateY(-22px) }
 }
 .mem-hud-label { display: block; font-size: 10px; opacity: .6; }
 .mem-hud-value { display: block; font-size: 20px; font-weight: 800; color: #ffe9a8; line-height: 1.2; }
@@ -187,6 +236,12 @@ button { font-family: inherit; }
 .mem-result-icon.fail { background: none; color: #b9a7d8; }
 .mem-result-title { font-size: 24px; font-weight: 800; margin: 12px 0 6px; letter-spacing: 2px; }
 .mem-result-desc { font-size: 13px; opacity: .75; line-height: 1.6; }
+.mem-level-change {
+  display: inline-block; margin: 12px auto 0;
+  font-size: 13px; font-weight: 700; color: #ffe9a8;
+  background: rgba(217, 180, 106, .14); border: 1px solid rgba(217, 180, 106, .35);
+  border-radius: 999px; padding: 7px 16px;
+}
 .mem-stats {
   display: flex; justify-content: center; gap: 10px; margin: 20px 0;
 }

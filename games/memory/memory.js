@@ -1,22 +1,31 @@
 /**
  * 塔罗记忆翻牌 —— 独立 H5 小游戏
- * 规则（v1 定稿）：
- *   - 普通模式：16 张 / 8 对 / 60 秒，无正逆位，同牌即配对
- *   - 保底抽取：优先从未解锁的牌里取 8 张，不足再用已解锁的补齐
- *   - 通关后本局出现的 8 张牌点亮（按 牌组id × 牌id 分别记）
- *   - 集齐某牌组 78 张 → 该牌组解锁，抽牌页可选
- *   - 链式解锁：前一套集齐才开放下一套；韦特原版默认开放
- *   - 超时不通关、不解锁；牌义在结算页展示；倒计时不变红
+ * 规则（v3 定稿）：
+ *   - 闯关递增难度：轻松6对/75秒、标准8对/60秒、挑战10对/70秒、大师12对/80秒
+ *     初始「标准」；通关升一级（大师封顶），失败降一级（轻松保底），存档 localStorage
+ *   - 无正逆位，同牌即配对；保底抽取：优先未解锁牌
+ *   - 错配扣秒：挑战 -3s、大师 -5s（轻松/标准不扣）；倒计时不变红
+ *   - 点亮加成：通关点亮数 = 牌数 × 1.5 向上取整，不足部分从未解锁牌补
+ *   - 集齐某牌组 78 张 → 该牌组解锁；前一套集齐才开放下一套；韦特原版默认开放
+ *   - 超时不解锁；牌义在结算页展示
+ *   - 背景音乐：复用 heibao 的 bgm.mp3，点开始播放、静音开关、结算/关闭即停
  * 共享存储：localStorage['tarot_deck_unlock_v1'] = { <deckId>: [cardId, ...] }
- * 同源 iframe，与父页面读写同一份。
  */
 (function () {
   'use strict';
 
   var UNLOCK_KEY = 'tarot_deck_unlock_v1';
-  var DURATION = 60;
-  var PAIRS = 8;
+  var LEVEL_KEY = 'tarot_memory_level_v1';
+  var MUTE_KEY = 'tarot_memory_mute_v1';
   var FALLBACK_DIRS = ['waite720', 'waite', 'solabusca'];
+
+  // 闯关递增难度：初始「标准」，通关 +1、失败 -1
+  var LEVELS = [
+    { name: '轻松', pairs: 6,  time: 75, penalty: 0 },
+    { name: '标准', pairs: 8,  time: 60, penalty: 0 },
+    { name: '挑战', pairs: 10, time: 70, penalty: 3 },
+    { name: '大师', pairs: 12, time: 80, penalty: 5 }
+  ];
 
   // 牌组清单（与 app.js 的 DECKS 顺序一致）
   var DECKS = [
@@ -65,6 +74,18 @@
     return save[deckId].length;
   }
 
+  // ---------- 难度存档 ----------
+  function loadLevel() {
+    try {
+      var v = parseInt(localStorage.getItem(LEVEL_KEY), 10);
+      if (isNaN(v) || v < 0 || v >= LEVELS.length) return 1;  // 默认「标准」
+      return v;
+    } catch (e) { return 1; }
+  }
+  function saveLevel(i) {
+    try { localStorage.setItem(LEVEL_KEY, String(i)); } catch (e) {}
+  }
+
   // ---------- 牌面路径（含缺牌回退） ----------
   function cardFile(card) {
     return String(card.img || '').replace(/^cards\//, '').replace(/\.png$/, '.jpg');
@@ -89,8 +110,95 @@
     return { first: chain[0], fb: chain.slice(1).join('|') };
   }
 
+  // ---------- 背景音乐 + 合成音效 ----------
+  var BGM_SRC = '../heibao/assets/bgm/bgm.mp3';
+  var BGM_VOLUME = 0.28;
+  var bgm = null, bgmPlaying = false, bgmFailed = false, actx = null;
+  var muted = loadMute();
+
+  function loadMute() {
+    try { return localStorage.getItem(MUTE_KEY) === '1'; } catch (e) { return false; }
+  }
+  function saveMute(v) {
+    try { localStorage.setItem(MUTE_KEY, v ? '1' : '0'); } catch (e) {}
+  }
+  function startBgm() {
+    if (muted || bgmPlaying || bgmFailed) return;
+    try {
+      if (!bgm) {
+        bgm = new Audio(BGM_SRC);
+        bgm.loop = true;
+        bgm.volume = BGM_VOLUME;
+        bgm.preload = 'auto';
+        bgm.addEventListener('error', function () { bgmFailed = true; });
+      }
+      var p = bgm.play();
+      if (p && typeof p.then === 'function') {
+        p.then(function () { bgmPlaying = true; }).catch(function () {});
+      } else { bgmPlaying = true; }
+    } catch (e) { bgmFailed = true; }
+  }
+  function stopBgm() {
+    if (bgm && bgmPlaying) {
+      try { bgm.pause(); } catch (e) {}
+      bgmPlaying = false;
+    }
+  }
+  function blip(freq, dur, type, vol) {
+    if (muted) return;
+    try {
+      if (!actx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        actx = new AC();
+      }
+      if (actx.resume) actx.resume().catch(function () {});
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      o.connect(g); g.connect(actx.destination);
+      var t = actx.currentTime;
+      g.gain.setValueAtTime(vol || 0.18, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.start(t); o.stop(t + dur + 0.02);
+    } catch (e) {}
+  }
+  function sfxFlip() { blip(520, 0.09, 'sine', 0.13); }
+  function sfxMatch() {
+    blip(660, 0.14, 'triangle', 0.2);
+    setTimeout(function () { blip(880, 0.16, 'triangle', 0.18); }, 90);
+  }
+  function sfxWrong() { blip(180, 0.22, 'sawtooth', 0.14); }
+  function sfxWin() {
+    [523, 659, 784, 1047].forEach(function (f, i) {
+      setTimeout(function () { blip(f, 0.2, 'triangle', 0.2); }, i * 110);
+    });
+  }
+  function sfxLose() {
+    [392, 330, 262].forEach(function (f, i) {
+      setTimeout(function () { blip(f, 0.25, 'sine', 0.16); }, i * 140);
+    });
+  }
+  function updateSoundBtn() {
+    var b = $('memSound');
+    if (b) {
+      b.textContent = muted ? '🔇' : '🔊';
+      b.setAttribute('aria-label', muted ? '开启声音' : '关闭声音');
+    }
+  }
+  function toggleSound() {
+    muted = !muted;
+    saveMute(muted);
+    updateSoundBtn();
+    if (muted) stopBgm();
+    else if (!play.hidden) startBgm();   // 游戏进行中才恢复
+  }
+
   // ---------- 状态 ----------
   var save = loadUnlock();
+  var levelIdx = loadLevel();
+  var duration = LEVELS[levelIdx].time;
+  var pairs = LEVELS[levelIdx].pairs;
   var chosenIdx = 0;
   var chosenDeck = DECKS[0];
   var cards = [];        // 本局抽中的牌（DATA 对象）
@@ -99,7 +207,7 @@
   var matchedIds = {};
   var matchedCount = 0;
   var moves = 0, combo = 0, maxCombo = 0;
-  var timeLeft = DURATION, timer = null, locked = false;
+  var timeLeft = duration, timer = null, locked = false;
   var destroyed = false;
 
   function shuffle(a) {
@@ -119,14 +227,27 @@
       if (done[DATA[i].id]) got.push(DATA[i]); else rest.push(DATA[i]);
     }
     shuffle(rest); shuffle(got);
-    var picked = rest.slice(0, PAIRS);
-    if (picked.length < PAIRS) {
-      picked = picked.concat(got.slice(0, PAIRS - picked.length));
+    var picked = rest.slice(0, pairs);
+    if (picked.length < pairs) {
+      picked = picked.concat(got.slice(0, pairs - picked.length));
     }
     return picked;
   }
 
   // ---------- 开局页 ----------
+  function renderLevel() {
+    levelIdx = loadLevel();
+    $('memLevelName').textContent = LEVELS[levelIdx].name;
+    var track = $('memLevelTrack');
+    track.innerHTML = '';
+    LEVELS.forEach(function (lv, i) {
+      var s = document.createElement('span');
+      s.className = 'mem-level-dot' + (i === levelIdx ? ' now' : '') + (i < levelIdx ? ' passed' : '');
+      s.textContent = lv.name;
+      track.appendChild(s);
+    });
+  }
+
   function renderDeckList() {
     save = loadUnlock();
     decksBox.innerHTML = '';
@@ -137,7 +258,6 @@
       btn.type = 'button';
       btn.className = 'mem-deck' + (idx === chosenIdx ? ' active' : '') + (open ? '' : ' locked');
       btn.setAttribute('data-idx', idx);
-      // 缩略图用愚者（DATA[0]）
       var info = imgUrl(d, DATA[0] || { img: 'cards/fool.png' });
       var flag = open ? (n >= 78 ? '已集齐' : n + '/78') : '未解锁';
       btn.innerHTML =
@@ -159,6 +279,8 @@
 
   function showSetup() {
     show(setup);
+    stopBgm();
+    renderLevel();
     renderDeckList();
   }
 
@@ -167,14 +289,27 @@
     el.hidden = false;
   }
 
+  function showTimeSlip(txt) {
+    var hud = $('memTime').parentNode;
+    if (!hud) return;
+    var el = document.createElement('span');
+    el.className = 'mem-timeslip';
+    el.textContent = txt;
+    hud.appendChild(el);
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 900);
+  }
+
   // ---------- 游戏流程 ----------
   function startGame() {
     save = loadUnlock();
+    levelIdx = loadLevel();
+    duration = LEVELS[levelIdx].time;
+    pairs = LEVELS[levelIdx].pairs;
     if (!isDeckOpen(save, chosenIdx)) { chosenIdx = 0; chosenDeck = DECKS[0]; }
+
     cards = pickCards();
-    if (cards.length < PAIRS) { // 兜底：数据异常时补前 8 张
-      cards = DATA.slice(0, PAIRS);
-    }
+    if (cards.length < pairs) cards = DATA.slice(0, pairs);
+
     board = [];
     var pair = [];
     cards.forEach(function (c) { pair.push(c, c); });
@@ -183,14 +318,15 @@
 
     opened = []; matchedIds = {}; matchedCount = 0;
     moves = 0; combo = 0; maxCombo = 0;
-    timeLeft = DURATION; locked = false; destroyed = false;
+    timeLeft = duration; locked = false; destroyed = false;
     $('memTime').textContent = timeLeft;
     $('memMoves').textContent = '0';
     $('memCombo').textContent = '×0';
-    $('memHudDeck').textContent = chosenDeck.name;
+    $('memHudDeck').textContent = LEVELS[levelIdx].name + ' · ' + chosenDeck.name;
     $('memProgressBar').style.width = '0%';
     renderBoard();
     show(play);
+    startBgm();
 
     clearInterval(timer);
     timer = setInterval(function () {
@@ -229,6 +365,7 @@
     if (locked || destroyed || el.classList.contains('flipped') || el.classList.contains('matched')) return;
     if (opened.length >= 2) return;
     el.classList.add('flipped');
+    sfxFlip();
     opened.push({ idx: idx, cardId: board[idx].id, el: el });
 
     if (opened.length === 2) {
@@ -244,13 +381,21 @@
         combo++;
         maxCombo = Math.max(maxCombo, combo);
         $('memCombo').textContent = '×' + combo;
-        $('memProgressBar').style.width = Math.round(matchedCount / PAIRS * 100) + '%';
+        $('memProgressBar').style.width = Math.round(matchedCount / pairs * 100) + '%';
+        sfxMatch();
         opened = [];
         locked = false;
-        if (matchedCount >= PAIRS) { clearInterval(timer); finish(true); }
+        if (matchedCount >= pairs) { clearInterval(timer); finish(true); }
       } else {
         combo = 0;
         $('memCombo').textContent = '×0';
+        sfxWrong();
+        var pen = LEVELS[levelIdx].penalty;
+        if (pen > 0 && !destroyed) {
+          timeLeft = Math.max(0, timeLeft - pen);
+          $('memTime').textContent = timeLeft;
+          showTimeSlip('-' + pen + 's');
+        }
         a.el.classList.add('wrong'); b.el.classList.add('wrong');
         setTimeout(function () {
           if (destroyed) return;
@@ -259,6 +404,10 @@
           opened = [];
           locked = false;
         }, 720);
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          setTimeout(function () { if (!destroyed) finish(false); }, 740);
+        }
       }
     }
   }
@@ -266,38 +415,73 @@
   // ---------- 结算 ----------
   function finish(win) {
     locked = true;
-    var used = cards.slice(); // 本局出现的 8 张
+    stopBgm();
+    if (win) sfxWin(); else sfxLose();
+
+    var used = cards.slice();             // 本局出现的牌
+    var bonusCards = [];                  // 难度加成额外点亮的牌
     var newDeckName = '';
+    var levelBefore = levelIdx;
 
     if (win) {
       save = loadUnlock();
       var before = unlockedOf(save, chosenDeck.id).length;
-      var after = markUnlocked(save, chosenDeck.id, used.map(function (c) { return c.id; }));
+      // 高难度额外加成：点亮数 = 牌数 × 1.5 向上取整
+      var target = Math.ceil(pairs * 1.5);
+      var done = {};
+      used.forEach(function (c) { done[c.id] = true; });
+      for (var i = 0; i < DATA.length && used.length + bonusCards.length < target; i++) {
+        if (!done[DATA[i].id] && unlockedOf(save, chosenDeck.id).indexOf(DATA[i].id) < 0) {
+          bonusCards.push(DATA[i]);
+          done[DATA[i].id] = true;
+        }
+      }
+      var litIds = used.concat(bonusCards).map(function (c) { return c.id; });
+      var after = markUnlocked(save, chosenDeck.id, litIds);
       saveUnlock(save);
       if (before < 78 && after >= 78) {
         var next = DECKS[chosenIdx + 1];
         if (next) newDeckName = next.name;
       }
       notifyParent('unlock', chosenDeck.id);
+      levelIdx = Math.min(levelBefore + 1, LEVELS.length - 1);
+    } else {
+      levelIdx = Math.max(levelBefore - 1, 0);
     }
+    saveLevel(levelIdx);
 
     $('memResultIcon').textContent = win ? '✦' : '◌';
     $('memResultIcon').className = 'mem-result-icon' + (win ? '' : ' fail');
     $('memResultTitle').textContent = win ? '通关！' : '时间到';
     $('memResultDesc').textContent = win
       ? '全部配对完成，本局的牌已点亮'
-      : '还差 ' + (PAIRS - matchedCount) + ' 对没有配对，本次不解锁';
+      : '还差 ' + (pairs - matchedCount) + ' 对没有配对，本次不解锁';
 
     $('memStats').innerHTML =
-      stat('用时', win ? (DURATION - timeLeft) + 's' : DURATION + 's') +
+      stat('用时', win ? (duration - timeLeft) + 's' : duration + 's') +
       stat('步数', moves) +
       stat('最高连击', '×' + maxCombo);
+
+    // 难度升降提示
+    var lvTxt = '';
+    if (win && levelIdx > levelBefore) {
+      lvTxt = '难度提升：' + LEVELS[levelBefore].name + ' → ' + LEVELS[levelIdx].name;
+    } else if (!win && levelIdx < levelBefore) {
+      lvTxt = '难度降低：' + LEVELS[levelBefore].name + ' → ' + LEVELS[levelIdx].name;
+    } else if (win && levelIdx === LEVELS.length - 1) {
+      lvTxt = '已是最高难度「大师」';
+    } else if (!win && levelIdx === 0) {
+      lvTxt = '已是最低难度「轻松」';
+    }
+    var lvEl = $('memLevelChange');
+    lvEl.textContent = lvTxt;
+    lvEl.hidden = !lvTxt;
 
     var u = '';
     if (win) {
       $('memUnlocks').hidden = false;
-      u += '<div class="mem-unlock-title">本局解锁的牌与牌义</div>';
-      used.forEach(function (c) {
+      u += '<div class="mem-unlock-title">本次点亮 ' + (used.length + bonusCards.length) + ' 张 · 牌义</div>';
+      used.concat(bonusCards).forEach(function (c) {
         u += '<div class="mem-unlock"><span class="mem-unlock-name">' + (c.name || '?').replace(/·.*/, '') + '</span>' +
              '<span class="mem-unlock-text">' + (c.up || '') + '</span></div>';
       });
@@ -307,11 +491,9 @@
       $('memUnlocks').hidden = true;
     }
 
-    // 新牌组开放提示
-    var extra = '';
     if (newDeckName) {
-      extra = '<div class="mem-newdeck">✦ 「' + newDeckName + '」已解锁，现在可以在抽牌和本游戏中使用。</div>';
-      $('memUnlocks').insertAdjacentHTML('afterbegin', extra);
+      $('memUnlocks').insertAdjacentHTML('afterbegin',
+        '<div class="mem-newdeck">✦ 「' + newDeckName + '」已解锁，现在可以在抽牌和本游戏中使用。</div>');
     }
 
     show(result);
@@ -334,15 +516,17 @@
   $('memStart').addEventListener('click', startGame);
   $('memAgain').addEventListener('click', startGame);
   $('memBack').addEventListener('click', showSetup);
+  $('memSound').addEventListener('click', toggleSound);
 
-  // 供父页面在关闭 iframe 时调用，释放定时器
   window.__memory = {
     destroy: function () {
       destroyed = true;
       clearInterval(timer);
+      stopBgm();
       notifyParent('destroyed');
     }
   };
 
+  updateSoundBtn();
   showSetup();
 })();
