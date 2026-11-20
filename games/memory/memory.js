@@ -144,7 +144,7 @@
         '<img class="mem-deck-thumb" src="' + info.first + '" data-fb="' + info.fb + '"' +
         ' onerror="window.__memFb(this)" alt="">' +
         '<span class="mem-deck-info"><span class="mem-deck-name">' + d.name + '</span>' +
-        '<span class="mem-deck-prog">' + (open ? '已点亮 ' + n + ' 张，通关可继续解锁' : '集齐上一套 78 张后开放') + '</span></span>' +
+        '<span class="mem-deck-prog">' + (open ? '已点亮 ' + n + '/78' : '集齐上一套开放') + '</span></span>' +
         '<span class="mem-deck-flag">' + flag + '</span>';
       if (open) {
         btn.addEventListener('click', function () {
@@ -213,7 +213,12 @@
           '<div class="mem-face"><img src="' + info.first + '" data-fb="' + info.fb + '"' +
           ' onerror="window.__memFb(this)" alt="" draggable="false">' +
           '<span class="mem-face-name">' + (c.name || '') + '</span></div>' +
-          '<div class="mem-back"><div class="mem-back-mark">✦</div></div>' +
+          '<div class="mem-back">' +
+            '<div class="gb-stars"><i></i><i></i><i></i><i></i><i></i><i></i></div>' +
+            '<div class="gb-ring"></div>' +
+            '<img class="gb-img" src="../../cards/gengar.png" alt="" draggable="false">' +
+            '<div class="gb-text">桀桀塔罗</div>' +
+          '</div>' +
         '</div>';
       el.addEventListener('click', function () { flip(idx, el); });
       grid.appendChild(el);
