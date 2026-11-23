@@ -4518,18 +4518,64 @@
     }
   }
 
-  /* 记忆翻牌通关点亮牌后，游戏 iframe 会 postMessage 通知；刷新牌组页的解锁状态 */
+  /* 小游戏通关点亮牌后，游戏 iframe 会 postMessage 通知；刷新牌组页的解锁状态 */
   window.addEventListener("message", (e) => {
     if (!e || !e.data || typeof e.data !== "object") return;
-    if (e.data.type !== "memory:unlock") return;
-    renderDecks();
-    // 若当前牌组恰好被解锁链影响，重新校验
-    if (!isDeckOpenById(loadDeckUnlock(), currentDeck.id)) {
-      currentDeck = DECKS[0];
-      try { localStorage.setItem(DECK_KEY, currentDeck.id); } catch (err) {}
+    if (e.data.type === "memory:unlock") {
       renderDecks();
+      // 若当前牌组恰好被解锁链影响，重新校验
+      if (!isDeckOpenById(loadDeckUnlock(), currentDeck.id)) {
+        currentDeck = DECKS[0];
+        try { localStorage.setItem(DECK_KEY, currentDeck.id); } catch (err) {}
+        renderDecks();
+      }
+      return;
+    }
+    /* 合成黑洞通关：按本局分数点亮卡面（每 1000 分 1 张，保底 5、封顶 15） */
+    if (e.data.type === "heibao:win") {
+      handleHeibaoWin(e.data.result && e.data.result.score);
+      return;
     }
   });
+
+  /* 黑洞通关奖励：给「当前未集齐的第一套」点亮若干张牌，写入共享解锁存档 */
+  function handleHeibaoWin(score) {
+    const save = loadDeckUnlock();
+    // 找当前未集齐的第一套牌组（按 DECKS 顺序，第一套优先）
+    let target = null;
+    for (const d of DECKS) {
+      if (unlockedCount(save, d.id) < 78) { target = d; break; }
+    }
+    if (!target) { toast("✦ 黑洞诞生！所有卡面已集齐"); return; }
+
+    const already = Array.isArray(save[target.id]) ? save[target.id].slice() : [];
+    const left = TAROT_DATA.filter((c) => already.indexOf(c.id) < 0);
+    // 按分数换算点亮数，且不超过该牌组剩余牌数
+    let n = Math.floor((Number(score) || 0) / 1000);
+    n = Math.max(5, Math.min(15, n));
+    n = Math.min(n, left.length);
+    if (n <= 0) { toast("✦ 黑洞诞生！卡面已全部点亮"); return; }
+
+    // 洗牌后挑 n 张未点亮的牌，合并去重写回
+    for (let i = left.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = left[i]; left[i] = left[j]; left[j] = t;
+    }
+    const before = already.length;
+    left.slice(0, n).forEach((c) => already.push(c.id));
+    already.sort((a, b) => a - b);
+    save[target.id] = already;
+    try { localStorage.setItem(UNLOCK_KEY, JSON.stringify(save)); } catch (err) {}
+
+    renderDecks();
+    if (before < 78 && already.length >= 78) {
+      const nextIdx = DECKS.findIndex((d) => d.id === target.id) + 1;
+      const next = DECKS[nextIdx];
+      toast("✦ 黑洞诞生！「" + target.name + "」已集齐" + (next ? "，「" + next.name + "」解锁" : ""));
+    } else {
+      toast("✦ 黑洞诞生！点亮 " + n + " 张卡面（" + target.name + " " + already.length + "/78）");
+    }
+  }
 
   /* ============================================================
      初始化
